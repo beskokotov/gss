@@ -37,7 +37,12 @@ function activateTab(tab) {
 tabs.forEach((tab, index) => {
   tab.addEventListener('click', () => activateTab(tab));
   tab.addEventListener('keydown', event => {
-    const target = {ArrowRight:(index+1)%tabs.length, ArrowLeft:(index+tabs.length-1)%tabs.length, Home:0, End:tabs.length-1}[event.key];
+    const target = {
+      ArrowRight: (index + 1) % tabs.length,
+      ArrowLeft: (index + tabs.length - 1) % tabs.length,
+      Home: 0,
+      End: tabs.length - 1
+    }[event.key];
     if (target !== undefined) {
       event.preventDefault();
       activateTab(tabs[target]);
@@ -71,7 +76,9 @@ dialog.addEventListener('click', event => {
 for (const field of [form.elements.name, form.elements.message]) {
   field.addEventListener('input', () => field.setCustomValidity(''));
 }
-form.addEventListener('input', () => { status.textContent = ''; });
+form.addEventListener('input', () => {
+  status.textContent = '';
+});
 form.addEventListener('submit', event => {
   event.preventDefault();
   for (const field of [form.elements.name, form.elements.message]) {
