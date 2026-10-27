@@ -3,15 +3,22 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": {"node": ">=24.0.0"},
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
-    "assets": "node --use-env-proxy scripts/setup-assets.mjs"
+    "assets": "node --use-env-proxy scripts/setup-assets.mjs",
+    "build:preview": "node scripts/build-preview.mjs",
+    "check:preview": "node scripts/check-preview.mjs"
   },
-  "dependencies": {"react": "^19.2.0", "react-dom": "^19.2.0"},
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
   "devDependencies": {
     "vite": "^7.1.12",
     "vitest": "^3.2.4",
