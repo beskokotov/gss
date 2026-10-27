@@ -5,9 +5,14 @@ await mkdir(root, { recursive: true });
 const files = [
   ['gss-logo.png', 'https://gss.ru/wp-content/themes/gss/assets/images/logo.png'],
   ['garant-logo.png', 'https://gss.ru/wp-content/themes/gss/assets/images/logo_garant.png'],
-  ['manrope-regular.ttf', 'https://fonts.gstatic.com/s/manrope/v20/xn7_YHE41ni1AdIRqAuZuw1Bx9mbZk79FO_F.ttf'],
-  ['manrope-bold.ttf', 'https://fonts.gstatic.com/s/manrope/v20/xn7_YHE41ni1AdIRqAuZuw1Bx9mbZk4aE-_F.ttf'],
-  ['OFL-Manrope.txt', 'https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/OFL.txt']
+  ['Hauora-Regular.woff2', 'https://raw.githubusercontent.com/WCYS-Co/Hauora-Sans/master/fonts/webfonts/Hauora-Regular.woff2'],
+  ['Hauora-Medium.woff2', 'https://raw.githubusercontent.com/WCYS-Co/Hauora-Sans/master/fonts/webfonts/Hauora-Medium.woff2'],
+  ['Hauora-SemiBold.woff2', 'https://raw.githubusercontent.com/WCYS-Co/Hauora-Sans/master/fonts/webfonts/Hauora-SemiBold.woff2'],
+  ['Hauora-Bold.woff2', 'https://raw.githubusercontent.com/WCYS-Co/Hauora-Sans/master/fonts/webfonts/Hauora-Bold.woff2'],
+  ['Hauora-ExtraBold.woff2', 'https://raw.githubusercontent.com/WCYS-Co/Hauora-Sans/master/fonts/webfonts/Hauora-ExtraBold.woff2'],
+  ['OFL-Hauora.txt', 'https://raw.githubusercontent.com/WCYS-Co/Hauora-Sans/master/OFL.txt'],
+  ['ClearSans-Bold.woff', 'https://raw.githubusercontent.com/intel/clear-sans/main/WOFF/ClearSans-Bold.woff'],
+  ['LICENSE-ClearSans.txt', 'https://raw.githubusercontent.com/intel/clear-sans/main/LICENSE.txt']
 ];
 await Promise.all(files.map(async ([name, url]) => {
   const response = await fetch(url, { signal: AbortSignal.timeout(45000) });

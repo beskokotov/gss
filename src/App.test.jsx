@@ -38,6 +38,9 @@ describe('Ключевые сценарии сайта', () => {
     expect(screen.getByRole('tab', { name: 'Кадровику' }).getAttribute('aria-selected')).toBe('true');
     await user.keyboard('{Home}');
     expect(screen.getByRole('tab', { name: 'Бухгалтеру' }).getAttribute('aria-selected')).toBe('true');
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: 'Экономисту' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tabpanel').textContent).toContain('Планирование и анализ затрат');
   });
 
   it('готовит письмо с выбранным направлением и не отправляет запрос на сервер', async () => {

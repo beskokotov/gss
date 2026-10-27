@@ -4,16 +4,16 @@ import { build } from 'vite';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const assetRoot = new URL('../public/assets/', import.meta.url);
-const mime = { png: 'image/png', webp: 'image/webp', ttf: 'font/ttf' };
+const mime = { png: 'image/png', webp: 'image/webp', woff2: 'font/woff2', woff: 'font/woff' };
 const names = [
   'gss-logo.png', 'garant-logo.png', 'legal-art.webp',
-  'research-art.webp', 'manrope-regular.ttf', 'manrope-bold.ttf'
+  'research-art.webp', 'Hauora-Regular.woff2', 'Hauora-Medium.woff2', 'Hauora-SemiBold.woff2', 'Hauora-Bold.woff2', 'Hauora-ExtraBold.woff2', 'ClearSans-Bold.woff'
 ];
 const assets = Object.fromEntries(await Promise.all(names.map(async (name) => {
   const bytes = await readFile(new URL(name, assetRoot));
   return [name, `data:${mime[name.split('.').pop()]};base64,${bytes.toString('base64')}`];
 })));
-const imageAssets = Object.fromEntries(names.filter(name => !name.endsWith('.ttf')).map(name => [name, assets[name]]));
+const imageAssets = Object.fromEntries(names.filter(name => !name.endsWith('.woff2') && !name.endsWith('.woff')).map(name => [name, assets[name]]));
 
 const result = await build({
   root,

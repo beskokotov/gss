@@ -1,4 +1,5 @@
 const paths = {
+  chart: <><path d="M4 3v17h17M8 15v-4M13 15V7M18 15V4" /></>,
   arrow: <><path d="M5 12h14M13 6l6 6-6 6" /></>,
   external: <><path d="M7 17 17 7M7 7h10v10" /></>,
   pin: <><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" /><circle cx="12" cy="10" r="2" /></>,
