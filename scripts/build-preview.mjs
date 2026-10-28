@@ -6,7 +6,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const assetRoot = new URL('../public/assets/', import.meta.url);
 const mime = { png: 'image/png', webp: 'image/webp', woff2: 'font/woff2', woff: 'font/woff', otf: 'font/otf' };
 const names = [
-  'gss-logo.png', 'garant-logo-transparent.png', 'hero-slide-1.webp', 'hero-slide-2.webp', 'hero-slide-3.webp', 'hero-slide-4.webp', 'hero-slide-5.webp',
+  'gss-logo.png', 'gss-logo-modern-v1.png', 'garant-logo-transparent.png', 'hero-slide-1.webp', 'hero-slide-2.webp', 'hero-slide-3.webp', 'hero-slide-4.webp', 'hero-slide-5.webp',
   'hero-slide-1-mobile.webp', 'hero-slide-2-mobile.webp', 'hero-slide-3-mobile.webp', 'hero-slide-4-mobile.webp', 'hero-slide-5-mobile.webp',
   'research-art.webp', 'OmegaUI-Regular-VF.woff2'
 ];

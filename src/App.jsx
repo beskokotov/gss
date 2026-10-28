@@ -11,11 +11,8 @@ function Dialog({ title, onClose, children }) {
   const ref = useRef(null);
   const previous = useRef(document.activeElement);
   useEffect(() => {
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     ref.current.showModal();
     return () => {
-      document.body.style.overflow = overflow;
       previous.current?.focus();
     };
   }, []);
@@ -153,10 +150,8 @@ export default function App() {
 
     <header className="header">
       <div className="container masthead">
-        <a className="brand" href="#home" aria-label="Гарант-Сервис Самара — главная">
-          <img src={asset('gss-logo.png')} alt="" width="66" height="54" />
-          <span>ГАРАНТ-СЕРВИС <strong>САМАРА</strong></span>
-          
+        <a className="brand brand-modern" href="#home" aria-label="Гарант-Сервис Самара — главная">
+          <img src={asset('gss-logo-modern-v1.png')} alt="Гарант-Сервис Самара" width="2172" height="724" />
         </a>
         <a className="garant-brand" href="https://www.garant.ru/" aria-label="ГАРАНТ — информационно-правовое обеспечение"><img src={asset('garant-logo-transparent.png')} alt="ГАРАНТ — информационно-правовое обеспечение" width="141" height="47" /></a>
         <a className="header-phone" href={contacts.phones[0].href}>{contacts.phones[0].label}<small>Связаться с командой</small></a>
@@ -206,7 +201,7 @@ export default function App() {
 
       <section className="service-section" id="services" aria-labelledby="services-title"><div className="container section">
         <div className="section-heading"><div><span className="eyebrow">Поддержка на каждом этапе</span><h2 id="services-title">Система. Сервисы.<br />Люди рядом</h2></div><p>Познакомиться, освоить, разобраться в вопросе — региональная команда поможет двигаться дальше.</p></div>
-        <div className="service-grid">{services.map((service) => <article className={`service-card ${service.color}`} key={service.title}><span className="icon-tile"><Icon name={service.icon} size={28} /></span><h3>{service.title}</h3><p>{service.text}</p><a className="text-button" href={service.href} target="_blank" rel="noreferrer">Об услуге <Icon name="external" size={18} /><span className="sr-only"> (новая вкладка)</span></a></article>)}</div>
+        <div className="service-grid">{services.map((service) => <article className={`service-card ${service.color}`} key={service.title}><span className="icon-tile"><Icon name={service.icon} size={28} /></span><h3>{service.title}</h3><p>{service.text}</p><button className="text-button" onClick={() => request(service.title)}>Об услуге <Icon name="arrow" size={18} /></button></article>)}</div>
         <div className="support-strip"><div><Icon name="users" size={28} /><span><strong>Уже работаете с ГАРАНТ?</strong><small>Поможем с использованием и техническими вопросами.</small></span></div><button className="text-button" onClick={() => request('Помощь пользователю системы ГАРАНТ')}>Связаться с поддержкой <Icon name="arrow" size={20} /></button></div>
       </div></section>
 
@@ -221,7 +216,7 @@ export default function App() {
       <section className="container section" id="contacts" aria-labelledby="contacts-title"><div className="contact-panel"><div className="contact-intro"><span className="eyebrow">Гарант-Сервис Самара</span><h2 id="contacts-title">Давайте найдем<br />ваше решение</h2><p>Расскажите о своей задаче — обсудим возможности системы и следующий шаг.</p><button className="button button-white" onClick={() => request()}>Заказать демонстрацию <Icon name="arrow" size={20} /></button></div><div className="contact-data"><div className="contact-phones">{contacts.phones.map((phone) => <a key={phone.href} href={phone.href}>{phone.label}</a>)}</div><a className="contact-email" href={`mailto:${contacts.email}`}>{contacts.email}<Icon name="external" size={22} /></a><address>{contacts.address}<br />{contacts.office}</address><div className="contact-links"><a href={`https://yandex.ru/maps/?text=${encodeURIComponent(`${contacts.address}, Гарант-Сервис Самара`)}`} target="_blank" rel="noreferrer">Открыть карту <Icon name="external" size={16} /><span className="sr-only"> (новая вкладка)</span></a><button onClick={copyAddress}><Icon name="copy" size={16} /> Скопировать адрес</button></div><p className="copy-status" aria-live="polite">{copyStatus}</p></div></div></section>
     </main>
 
-    <footer className="footer"><div className="container"><div className="footer-top"><a className="brand" href="#home"><img src={asset('gss-logo.png')} width="53" height="43" alt="" /><span>ГАРАНТ-СЕРВИС <strong>САМАРА</strong></span></a><p>Правовая информация.<br />Профессиональная поддержка.</p><a href="#home" className="text-button">Наверх ↑</a></div><div className="footer-bottom"><span>© {new Date().getFullYear()} ЗАО «Гарант-Сервис Самара»</span><button className="text-button" onClick={() => setModal({ type: 'privacy', title: 'Как работает обратная связь' })}>Обработка данных</button><span>Состав и условия услуг уточняйте у специалистов.</span></div></div></footer>
+    <footer className="footer"><div className="container"><div className="footer-top"><a className="brand brand-modern" href="#home"><img src={asset('gss-logo-modern-v1.png')} width="2172" height="724" alt="ГАРАНТ-СЕРВИС САМАРА" /></a><p>Правовая информация.<br />Профессиональная поддержка.</p><a href="#home" className="text-button">Наверх ↑</a></div><div className="footer-bottom"><span>© {new Date().getFullYear()} ЗАО «Гарант-Сервис Самара»</span><button className="text-button" onClick={() => setModal({ type: 'privacy', title: 'Как работает обратная связь' })}>Обработка данных</button><span>Состав и условия услуг уточняйте у специалистов.</span></div></div></footer>
 
     {modal && <Dialog title={modal.title} onClose={() => setModal(null)}>
       {modal.type === 'request' && <RequestForm topic={modal.title} />}

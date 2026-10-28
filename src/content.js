@@ -6,8 +6,7 @@ export const contacts = {
   phones: [
     { label: '+7 (846) 207-0-702', href: 'tel:+78462070702' },
     { label: '+7 (846) 279-0-279', href: 'tel:+78462790279' }
-  ],
-  source: 'https://gss.ru/contacts/'
+  ]
 };
 
 export const navigation = [
@@ -45,9 +44,9 @@ export const professions = [
 ];
 
 export const services = [
-  { icon: 'chat', title: 'Правовой консалтинг', text: 'Экспертные ответы на профессиональные вопросы и база практических ситуаций.', href: 'https://gss.ru/uniq/consulting/', color: 'lavender' },
-  { icon: 'bell', title: 'Лента «Прайм»', text: 'Правовые новости по интересующим вас темам — в индивидуальной ленте.', href: 'https://gss.ru/uniq/prime/', color: 'mint' },
-  { icon: 'play', title: 'Семинары и обучение', text: 'Развивайте профессиональные знания и осваивайте возможности системы.', href: 'https://gss.ru/seminars-about/', color: 'peach' }
+  { icon: 'chat', title: 'Правовой консалтинг', text: 'Экспертные ответы на профессиональные вопросы и база практических ситуаций.', color: 'lavender' },
+  { icon: 'bell', title: 'Лента «Прайм»', text: 'Правовые новости по интересующим вас темам — в индивидуальной ленте.', color: 'mint' },
+  { icon: 'play', title: 'Семинары и обучение', text: 'Развивайте профессиональные знания и осваивайте возможности системы.', color: 'peach' }
 ];
 
 export const materials = [
