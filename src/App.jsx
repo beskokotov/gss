@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import Icon from './Icon.jsx';
+import HeroSlideshow from './HeroSlideshow.jsx';
 import { contacts, navigation, professions, services, materials, questions, makeMailto } from './content.js';
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/${name}`;
+const heroSlides = ['hero-slide-1.webp', 'hero-slide-2.webp', 'hero-slide-3.webp', 'hero-slide-4.webp', 'hero-slide-5.webp'].map(asset);
+const heroSlidesMobile = ['hero-slide-1-mobile.webp', 'hero-slide-2-mobile.webp', 'hero-slide-3-mobile.webp', 'hero-slide-4-mobile.webp', 'hero-slide-5-mobile.webp'].map(asset);
 
 function Dialog({ title, onClose, children }) {
   const ref = useRef(null);
@@ -78,6 +81,51 @@ export default function App() {
     return () => { document.removeEventListener('keydown', onKey); window.removeEventListener('resize', onResize); };
   }, [menu]);
 
+  useEffect(() => {
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (!motion || reducedMotion?.matches || !window.IntersectionObserver) return;
+
+    const cards = [...document.querySelectorAll('.quick-links>a, .capability, .profession-panel, .service-card, .support-strip, .material-card, .about-step, .contact-panel')];
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.remove('scroll-reveal-pending');
+        observer.unobserve(entry.target);
+      }
+    }, { threshold: 0, rootMargin: '0px 0px -20px 0px' });
+
+    for (const card of cards) {
+      // Animate only cards below the viewport; keep the current screen stable.
+      if (card.getBoundingClientRect().top < window.innerHeight) continue;
+      const siblingIndex = [...card.parentElement.children].indexOf(card);
+      card.style.setProperty('--reveal-delay', `${(siblingIndex % 4) * 50}ms`);
+      card.classList.add('scroll-reveal', 'scroll-reveal-pending');
+      observer.observe(card);
+    }
+    const revealFocused = (event) => {
+      const card = event.target.closest('.scroll-reveal-pending');
+      if (!card) return;
+      card.style.setProperty('--reveal-delay', '0ms');
+      card.classList.remove('scroll-reveal-pending');
+      observer.unobserve(card);
+    };
+    const revealAll = () => {
+      observer.disconnect();
+      for (const card of cards) {
+        card.classList.remove('scroll-reveal', 'scroll-reveal-pending');
+        card.style.removeProperty('--reveal-delay');
+      }
+    };
+    const onPreferenceChange = () => { if (reducedMotion.matches) revealAll(); };
+    document.addEventListener('focusin', revealFocused);
+    reducedMotion?.addEventListener('change', onPreferenceChange);
+    return () => {
+      revealAll();
+      document.removeEventListener('focusin', revealFocused);
+      reducedMotion?.removeEventListener('change', onPreferenceChange);
+    };
+  }, [motion]);
+
   function chooseTab(index) {
     setProfession(index);
     document.getElementById(`tab-${professions[index].id}`)?.focus();
@@ -110,13 +158,13 @@ export default function App() {
           <span>ГАРАНТ-СЕРВИС <strong>САМАРА</strong></span>
           
         </a>
-        <a className="garant-brand" href="https://www.garant.ru/" aria-label="ГАРАНТ — информационно-правовое обеспечение"><img src={asset('garant-logo.png')} alt="ГАРАНТ — информационно-правовое обеспечение" width="141" height="42" /></a>
+        <a className="garant-brand" href="https://www.garant.ru/" aria-label="ГАРАНТ — информационно-правовое обеспечение"><img src={asset('garant-logo-transparent.png')} alt="ГАРАНТ — информационно-правовое обеспечение" width="141" height="47" /></a>
         <a className="header-phone" href={contacts.phones[0].href}>{contacts.phones[0].label}<small>Связаться с командой</small></a>
         <button className="button button-small header-request" onClick={() => request('Консультация по системе ГАРАНТ')}>Получить консультацию</button>
         <button ref={menuButton} className="icon-button menu-toggle" aria-label={menu ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={menu} aria-controls="main-navigation" onClick={() => setMenu(!menu)}><Icon name={menu ? 'close' : 'menu'} /></button>
       </div>
       <nav id="main-navigation" className={`navigation ${menu ? 'is-open' : ''}`} aria-label="Главная навигация">
-        <div className="container nav-inner">{navigation.map(([id, text]) => <a key={id} href={`#${id}`} onClick={() => setMenu(false)}>{text}</a>)}<a className="nav-contact" href={contacts.phones[0].href}><Icon name="phone" size={16} /> Позвонить нам</a></div>
+        <div className="container nav-inner">{navigation.map(([id, text], index) => <Fragment key={id}>{index > 0 && <span className="nav-divider" aria-hidden="true" />}<a href={`#${id}`} onClick={() => setMenu(false)}>{text}</a></Fragment>)}<a className="nav-contact" href={contacts.phones[0].href}><Icon name="phone" size={16} /> Позвонить нам</a></div>
       </nav>
     </header>
 
@@ -130,7 +178,7 @@ export default function App() {
             <div className="actions"><button className="button" onClick={() => request()}>Познакомиться с системой <Icon name="arrow" size={20} /></button><a className="text-button" href="#system">Что умеет ГАРАНТ <Icon name="arrow" size={18} /></a></div>
             <span className="hero-caption">Для бизнеса, специалистов и организаций</span>
           </div>
-          <div className="hero-visual" aria-hidden="true"><img className="hero-art" src={asset('legal-art.webp')} width="1536" height="1024" fetchPriority="high" alt="" /><div className="floating-note"><span className="mini-check"><Icon name="check" size={17} /></span><span>Правовая основа<br /><strong>для ваших задач</strong></span></div></div>
+          <HeroSlideshow images={heroSlides} mobileImages={heroSlidesMobile} motion={motion} />
           <button className="motion-toggle" aria-pressed={!motion} onClick={() => setMotion(!motion)}>{motion ? 'Приостановить анимацию' : 'Включить анимацию'}</button>
         </div>
         <div className="quick-links">{[
@@ -166,7 +214,7 @@ export default function App() {
         <div className="materials-grid">{materials.map((material, index) => <article className="material-card" key={material.id}><div className={`material-cover cover-${index}`} aria-hidden="true"><span className="cover-line" /><Icon name={material.icon} size={70} /><span className="cover-orbit" /></div><div className="material-body"><span className="eyebrow">{material.category}</span><h3><button onClick={() => setModal({ type: 'article', title: material.title, article: material })}>{material.title}</button></h3><p>{material.intro}</p></div></article>)}</div>
       </section>
 
-      <section className="container section about" id="about" aria-labelledby="about-title"><div><span className="eyebrow">Ваш региональный партнер</span><h2 id="about-title">ГАРАНТ — в системе<br />Мы — рядом</h2><p>«Гарант-Сервис Самара» представляет систему ГАРАНТ в Самарской области. Помогаем выбрать наполнение, освоить инструменты и получать поддержку в работе.</p><a className="text-button" href="#contacts">Познакомиться с командой <Icon name="arrow" size={18} /></a></div><div className="about-steps">{[['01', 'Разберемся в задачах', 'Обсудим вашу сферу работы и нужные материалы.'], ['02', 'Покажем возможности', 'Проведем демонстрацию на понятных примерах.'], ['03', 'Поможем освоиться', 'Расскажем об обучении и сопровождении.']].map(([number, title, text]) => <div className="about-step" key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></div>)}</div></section>
+      <section className="container section about" id="about" aria-labelledby="about-title"><div><span className="eyebrow">Ваш региональный партнер</span><h2 id="about-title">ГАРАНТ — в системе<br />МЫ — рядом</h2><p>«Гарант-Сервис Самара» представляет систему ГАРАНТ в Самарской области. Помогаем выбрать наполнение, освоить инструменты и получать поддержку в работе.</p><a className="text-button" href="#contacts">Познакомиться с командой <Icon name="arrow" size={18} /></a></div><div className="about-steps">{[['01', 'Разберемся в задачах', 'Обсудим вашу сферу работы и нужные материалы.'], ['02', 'Покажем возможности', 'Проведем демонстрацию на понятных примерах.'], ['03', 'Поможем освоиться', 'Расскажем об обучении и сопровождении.']].map(([number, title, text]) => <div className="about-step" key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></div>)}</div></section>
 
       <section className="container section faq" aria-labelledby="faq-title"><div><span className="eyebrow">Есть вопрос?</span><h2 id="faq-title">Отвечаем<br />по существу</h2></div><div className="faq-list">{questions.map(([question, answer]) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></section>
 

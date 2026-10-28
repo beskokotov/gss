@@ -3,5 +3,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   base: './',
   esbuild: { jsx: 'automatic' },
-  test: { environment: 'jsdom' }
+  test: {
+    environment: 'jsdom',
+    exclude: ['**/node_modules/**', '**/dist/**', '**/backups/**']
+  }
 });

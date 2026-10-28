@@ -4,16 +4,17 @@ import { build } from 'vite';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const assetRoot = new URL('../public/assets/', import.meta.url);
-const mime = { png: 'image/png', webp: 'image/webp', woff2: 'font/woff2', woff: 'font/woff' };
+const mime = { png: 'image/png', webp: 'image/webp', woff2: 'font/woff2', woff: 'font/woff', otf: 'font/otf' };
 const names = [
-  'gss-logo.png', 'garant-logo.png', 'legal-art.webp',
-  'research-art.webp', 'Hauora-Regular.woff2', 'Hauora-Medium.woff2', 'Hauora-SemiBold.woff2', 'Hauora-Bold.woff2', 'Hauora-ExtraBold.woff2', 'ClearSans-Bold.woff'
+  'gss-logo.png', 'garant-logo-transparent.png', 'hero-slide-1.webp', 'hero-slide-2.webp', 'hero-slide-3.webp', 'hero-slide-4.webp', 'hero-slide-5.webp',
+  'hero-slide-1-mobile.webp', 'hero-slide-2-mobile.webp', 'hero-slide-3-mobile.webp', 'hero-slide-4-mobile.webp', 'hero-slide-5-mobile.webp',
+  'research-art.webp', 'OmegaUI-Regular-VF.woff2'
 ];
 const assets = Object.fromEntries(await Promise.all(names.map(async (name) => {
   const bytes = await readFile(new URL(name, assetRoot));
   return [name, `data:${mime[name.split('.').pop()]};base64,${bytes.toString('base64')}`];
 })));
-const imageAssets = Object.fromEntries(names.filter(name => !name.endsWith('.woff2') && !name.endsWith('.woff')).map(name => [name, assets[name]]));
+const imageAssets = Object.fromEntries(names.filter(name => !name.endsWith('.woff2') && !name.endsWith('.woff') && !name.endsWith('.otf')).map(name => [name, assets[name]]));
 
 const result = await build({
   root,

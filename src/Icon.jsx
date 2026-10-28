@@ -1,4 +1,5 @@
 const paths = {
+  ruler: <><path d="m3 16 13-13 5 5L8 21ZM12 7l2 2M8 11l2 2M4 15l2 2" /></>,
   chart: <><path d="M4 3v17h17M8 15v-4M13 15V7M18 15V4" /></>,
   arrow: <><path d="M5 12h14M13 6l6 6-6 6" /></>,
   external: <><path d="M7 17 17 7M7 7h10v10" /></>,

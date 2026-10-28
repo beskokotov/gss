@@ -36,6 +36,9 @@ describe('Ключевые сценарии сайта', () => {
     expect(screen.getByRole('tabpanel').textContent).toContain('Судебная практика');
     await user.keyboard('{ArrowRight}');
     expect(screen.getByRole('tab', { name: 'Кадровику' }).getAttribute('aria-selected')).toBe('true');
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: 'Инженеру' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tabpanel').textContent).toContain('Техническое регулирование');
     await user.keyboard('{Home}');
     expect(screen.getByRole('tab', { name: 'Бухгалтеру' }).getAttribute('aria-selected')).toBe('true');
     await user.keyboard('{ArrowRight}');
