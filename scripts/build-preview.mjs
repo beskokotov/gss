@@ -60,7 +60,7 @@ let html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 html = html.replace('href="./assets/gss-logo.png"', () => `href="${assets['gss-logo.png']}"`);
 html = html.replace('</head>', () => `<style>${String(styles[0].source)}</style>\n</head>`);
 html = html.replace(
-  /<script type="module" src="\/src\/main\.jsx"><\/script>/,
+  /<script type="module">[\s\S]*?<\/script>/,
   () => `<script>${scripts[0].code.replace(/<\/script/gi, '<\\/script')}</script>`
 );
 if (html.includes('src="/src/main.jsx"') || html.includes('type="module"')) throw new Error('Unresolved module entry.');
