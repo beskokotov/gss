@@ -41,9 +41,12 @@ try {
   menu.click(); await pause();
   assert.equal(menu.getAttribute('aria-expanded'), 'true');
 
-  document.getElementById('tab-lawyer').click(); await pause();
-  assert.ok(document.getElementById('profession-panel').textContent.includes('Судебная практика'));
-  document.querySelector('.profession-copy .button').click(); await pause();
+  assert.equal(document.querySelectorAll('.product-tile-button').length, 17);
+  document.getElementById('tab-product-17').click(); await pause();
+  assert.equal(document.getElementById('tab-product-17').getAttribute('aria-selected'), 'true');
+  assert.equal(document.getElementById('product-panel').getAttribute('aria-labelledby'), 'tab-product-17');
+  assert.equal(document.querySelectorAll('#product-panel button').length, 0);
+  document.querySelector('.header-request').click(); await pause();
   const dialog = document.querySelector('dialog[open]');
   assert.ok(dialog);
   dialog.querySelector('[name="name"]').value = 'Проверка';

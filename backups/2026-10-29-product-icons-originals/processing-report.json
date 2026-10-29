@@ -1,0 +1,244 @@
+{
+  "method": "Built-in imagegen background-extraction; canvas WebP conversion",
+  "size": 128,
+  "icons": [
+    {
+      "index": 1,
+      "bytes": 9820,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5407,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 2,
+      "bytes": 9290,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5616,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 3,
+      "bytes": 10262,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5105,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 4,
+      "bytes": 10360,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5375,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 5,
+      "bytes": 10412,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5231,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 6,
+      "bytes": 9420,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5567,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 7,
+      "bytes": 10984,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 4961,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 8,
+      "bytes": 10070,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5791,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 9,
+      "bytes": 10332,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5113,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 10,
+      "bytes": 9696,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5245,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 11,
+      "bytes": 9240,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5559,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 12,
+      "bytes": 11162,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5315,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 13,
+      "bytes": 9840,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5248,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 14,
+      "bytes": 9610,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5483,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 15,
+      "bytes": 10144,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5370,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 16,
+      "bytes": 9782,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 5480,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    },
+    {
+      "index": 17,
+      "bytes": 11152,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "transparentPixels": 4572,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "normalizedBadgeDiameter": 112
+    }
+  ]
+}

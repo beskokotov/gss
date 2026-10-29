@@ -3,11 +3,15 @@ import Icon from './Icon.jsx';
 import HeroSlideshow from './HeroSlideshow.jsx';
 import NewsSlider from './NewsSlider.jsx';
 import CompanyProfile from './CompanyProfile.jsx';
-import { contacts, navigation, professions, services, materials, latestNews, questions, makeMailto } from './content.js';
+import ProductHoverSlider from './ProductHoverSlider.jsx';
+import ProductDescription from './ProductDescription.jsx';
+import { productDescriptions } from './product-descriptions.js';
+import { contacts, navigation, products, services, materials, latestNews, questions, makeMailto } from './content.js';
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/${name}`;
 const heroSlides = ['hero-slide-1.webp', 'hero-slide-2.webp', 'hero-slide-3.webp', 'hero-slide-4.webp', 'hero-slide-5.webp'].map(asset);
 const heroSlidesMobile = ['hero-slide-1-mobile.webp', 'hero-slide-2-mobile.webp', 'hero-slide-3-mobile.webp', 'hero-slide-4-mobile.webp', 'hero-slide-5-mobile.webp'].map(asset);
+const productIcons = Array.from({ length: 17 }, (_, index) => asset(`product-icon-${String(index + 1).padStart(2, '0')}.webp`));
 
 function Dialog({ title, onClose, children, className = '' }) {
   const ref = useRef(null);
@@ -19,7 +23,9 @@ function Dialog({ title, onClose, children, className = '' }) {
     };
   }, []);
   return <dialog ref={ref} className={`dialog ${className}`} aria-labelledby="dialog-title"
-    onCancel={onClose} onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    onCancel={onClose} onClick={(event) => {
+      if (event.target === event.currentTarget) onClose();
+    }}>
     <div className="dialog-body">
       <div className="dialog-header">
         <button className="icon-button dialog-close" aria-label="Закрыть окно" onClick={onClose} autoFocus><Icon name="close" /></button>
@@ -66,12 +72,12 @@ function RequestForm({ topic }) {
 
 export default function App() {
   const [menu, setMenu] = useState(false);
-  const [profession, setProfession] = useState(0);
+  const [product, setProduct] = useState(0);
   const [modal, setModal] = useState(null);
   const [motion, setMotion] = useState(true);
   const [copyStatus, setCopyStatus] = useState('');
   const menuButton = useRef(null);
-  const current = professions[profession];
+  const current = products[product];
   const request = (topic = 'Демонстрация системы ГАРАНТ') => setModal({ type: 'request', title: topic });
 
   function navigateToSection(event, id) {
@@ -106,7 +112,7 @@ export default function App() {
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     if (!motion || reducedMotion?.matches || !window.IntersectionObserver) return;
 
-    const cards = [...document.querySelectorAll('.quick-links>a, .capability, .profession-panel, .service-card, .support-strip, .material-card, .rss-preview, .about-step, .contact-panel')];
+    const cards = [...document.querySelectorAll('.quick-links>a, .capability, .product-hover-slider, .profession-panel, .service-card, .support-strip, .material-card, .rss-preview, .about-step, .contact-panel')];
     const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
@@ -147,18 +153,6 @@ export default function App() {
     };
   }, [motion]);
 
-  function chooseTab(index) {
-    setProfession(index);
-    document.getElementById(`tab-${professions[index].id}`)?.focus();
-  }
-  function tabKey(event, index) {
-    let next;
-    if (event.key === 'ArrowRight') next = (index + 1) % professions.length;
-    if (event.key === 'ArrowLeft') next = (index - 1 + professions.length) % professions.length;
-    if (event.key === 'Home') next = 0;
-    if (event.key === 'End') next = professions.length - 1;
-    if (next !== undefined) { event.preventDefault(); chooseTab(next); }
-  }
   async function copyAddress() {
     try { await navigator.clipboard.writeText(`${contacts.address}, ${contacts.office}`); setCopyStatus('Адрес скопирован'); }
     catch { setCopyStatus('Выделите и скопируйте адрес выше'); }
@@ -177,7 +171,7 @@ export default function App() {
         <a className="brand brand-modern" href="#home" aria-label="Гарант-Сервис Самара — главная">
           <img src={asset('gss-logo-modern-v1.png')} alt="Гарант-Сервис Самара" width="2172" height="724" />
         </a>
-        <a className="garant-brand" href="https://www.garant.ru/" aria-label="ГАРАНТ — информационно-правовое обеспечение"><img src={asset('garant-logo-transparent.png')} alt="ГАРАНТ — информационно-правовое обеспечение" width="141" height="47" /></a>
+        <a className="garant-brand" href="https://www.garant.ru/" aria-label="ГАРАНТ — 35 лет рядом с вами"><img src={asset('garant-logo-35-years.webp')} alt="ГАРАНТ — 35 лет рядом с вами" width="640" height="256" /></a>
         <a className="header-phone" href={contacts.phones[0].href}>{contacts.phones[0].label}<small>Связаться с командой</small></a>
         <button className="button button-small header-request" onClick={() => request('Консультация по системе ГАРАНТ')}>Получить консультацию</button>
         <button ref={menuButton} className="icon-button menu-toggle" aria-label={menu ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={menu} aria-controls="main-navigation" onClick={() => setMenu(!menu)}><Icon name={menu ? 'close' : 'menu'} /></button>
@@ -215,11 +209,13 @@ export default function App() {
       </section>
 
       <section className="container section" id="solutions" aria-labelledby="solutions-title">
-        <div className="section-heading"><div><span className="eyebrow">Под ваши задачи</span><h2 id="solutions-title">У каждой профессии —<br />свое решение</h2></div><p>Выберите направление. Мы поможем подобрать информационные блоки и согласовать условия подключения.</p></div>
-        <div className="tabs" role="tablist" aria-label="Решения по профессиям">{professions.map((item, index) => <button key={item.id} id={`tab-${item.id}`} role="tab" aria-selected={index === profession} aria-controls="profession-panel" tabIndex={index === profession ? 0 : -1} onKeyDown={(event) => tabKey(event, index)} onClick={() => setProfession(index)}><Icon name={item.icon} size={20} />{item.label}</button>)}</div>
-        <div id="profession-panel" className="profession-panel" role="tabpanel" aria-labelledby={`tab-${current.id}`} tabIndex="0">
-          <div className="profession-copy"><span className="pill">{current.tag}</span><h3>{current.title}</h3><p>{current.text}</p><button className="button" onClick={() => request(`Подбор системы: ${current.label.toLowerCase()}`)}>Подобрать комплект <Icon name="arrow" size={19} /></button></div>
-          <div className="profession-list"><span className="eyebrow">Что обсудим при подборе</span>{current.items.map((item) => <div className="check-row" key={item}><span><Icon name="check" size={18} /></span>{item}</div>)}<p className="form-note">Точный состав комплекта и стоимость уточняются индивидуально.</p></div>
+        <div className="section-heading"><div><span className="eyebrow">Под ваши задачи</span><h2 id="solutions-title">ГАРАНТ-<span className="legaltech-accent">LegalTech</span><br />Автоматизация <span className="legaltech-accent">правовых</span> задач</h2></div><p>Онлайн-сервисы ГАРАНТ помогут сэкономить время специалистов и средства организации.</p></div>
+        <ProductHoverSlider items={products} icons={productIcons} selected={product} motion={motion} onSelect={setProduct} />
+        <div id="product-panel" className={`profession-panel${productDescriptions[current.id] ? ' profession-panel-detailed' : ''}`} role="tabpanel" aria-labelledby={`tab-${current.id}`} tabIndex="0">
+          {productDescriptions[current.id] ? <ProductDescription description={productDescriptions[current.id]} /> : <>
+          <div className="profession-copy"><span className="pill">{current.tag}</span><h3>{current.title}</h3><p>{current.text}</p></div>
+          <div className="profession-list"><span className="eyebrow">Что обсудим при подборе</span>{current.items.map(item => <div className="check-row" key={item}><span><Icon name="check" size={18} /></span>{item}</div>)}<p className="form-note">Точный состав комплекта и стоимость уточняются индивидуально.</p></div>
+          </>}
         </div>
       </section>
 
