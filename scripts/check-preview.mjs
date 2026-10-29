@@ -4,6 +4,7 @@ import vm from 'node:vm';
 import { JSDOM, VirtualConsole } from 'jsdom';
 
 const html = await readFile(new URL('../preview.html', import.meta.url), 'utf8');
+assert.ok(!/^(?:<<<<<<< |=======\r?$|>>>>>>> )/m.test(html), 'preview.html contains unresolved Git merge conflicts; rebuild it with npm run build:preview.');
 const errors = [];
 const console = new VirtualConsole();
 console.on('jsdomError', error => errors.push(error));
