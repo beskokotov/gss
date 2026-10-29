@@ -65,7 +65,7 @@ const news = [...xml.matchAll(/<item(?:\s[^>]*)?>([\s\S]*?)<\/item>/gi)]
   })
   .filter(item => item.title && item.description && item.date && item.href)
   .sort((first, second) => Date.parse(second.date) - Date.parse(first.date))
-  .slice(0, 3);
+  .slice(0, 10);
 
 if (news.length === 0) throw new Error('The RSS feed contained no usable news items; keeping the previous snapshot.');
 

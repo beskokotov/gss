@@ -1,13 +1,15 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import Icon from './Icon.jsx';
 import HeroSlideshow from './HeroSlideshow.jsx';
+import NewsSlider from './NewsSlider.jsx';
+import CompanyProfile from './CompanyProfile.jsx';
 import { contacts, navigation, professions, services, materials, latestNews, questions, makeMailto } from './content.js';
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/${name}`;
 const heroSlides = ['hero-slide-1.webp', 'hero-slide-2.webp', 'hero-slide-3.webp', 'hero-slide-4.webp', 'hero-slide-5.webp'].map(asset);
 const heroSlidesMobile = ['hero-slide-1-mobile.webp', 'hero-slide-2-mobile.webp', 'hero-slide-3-mobile.webp', 'hero-slide-4-mobile.webp', 'hero-slide-5-mobile.webp'].map(asset);
 
-function Dialog({ title, onClose, children }) {
+function Dialog({ title, onClose, children, className = '' }) {
   const ref = useRef(null);
   const previous = useRef(document.activeElement);
   useEffect(() => {
@@ -16,11 +18,13 @@ function Dialog({ title, onClose, children }) {
       previous.current?.focus();
     };
   }, []);
-  return <dialog ref={ref} className="dialog" aria-labelledby="dialog-title"
+  return <dialog ref={ref} className={`dialog ${className}`} aria-labelledby="dialog-title"
     onCancel={onClose} onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
     <div className="dialog-body">
-      <button className="icon-button dialog-close" aria-label="Закрыть окно" onClick={onClose} autoFocus><Icon name="close" /></button>
-      <h2 id="dialog-title">{title}</h2>
+      <div className="dialog-header">
+        <button className="icon-button dialog-close" aria-label="Закрыть окно" onClick={onClose} autoFocus><Icon name="close" /></button>
+        <h2 id="dialog-title">{title}</h2>
+      </div>
       {children}
     </div>
   </dialog>;
@@ -70,6 +74,26 @@ export default function App() {
   const current = professions[profession];
   const request = (topic = 'Демонстрация системы ГАРАНТ') => setModal({ type: 'request', title: topic });
 
+  function navigateToSection(event, id) {
+    setMenu(false);
+    if (id !== 'news' || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (window.location.hash !== '#news') window.history.pushState(null, '', '#news');
+
+    // Measure after the mobile menu closes, using layout offsets unaffected by reveal animations.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const block = document.getElementById('news');
+      if (!block) return;
+      const headerHeight = document.querySelector('.header')?.getBoundingClientRect().height ?? 0;
+      const availableHeight = window.innerHeight - headerHeight;
+      const gap = availableHeight >= block.offsetHeight ? (availableHeight - block.offsetHeight) / 2 : 24;
+      let blockTop = 0;
+      for (let node = block; node; node = node.offsetParent) blockTop += node.offsetTop;
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: Math.max(0, blockTop - headerHeight - gap), behavior: reducedMotion ? 'instant' : 'smooth' });
+    }));
+  }
+
   useEffect(() => {
     const onKey = (event) => { if (event.key === 'Escape' && menu) { setMenu(false); menuButton.current?.focus(); } };
     const onResize = () => { if (window.innerWidth > 1000) setMenu(false); };
@@ -82,7 +106,7 @@ export default function App() {
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     if (!motion || reducedMotion?.matches || !window.IntersectionObserver) return;
 
-    const cards = [...document.querySelectorAll('.quick-links>a, .capability, .profession-panel, .service-card, .support-strip, .material-card, .rss-card, .about-step, .contact-panel')];
+    const cards = [...document.querySelectorAll('.quick-links>a, .capability, .profession-panel, .service-card, .support-strip, .material-card, .rss-preview, .about-step, .contact-panel')];
     const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
@@ -159,7 +183,7 @@ export default function App() {
         <button ref={menuButton} className="icon-button menu-toggle" aria-label={menu ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={menu} aria-controls="main-navigation" onClick={() => setMenu(!menu)}><Icon name={menu ? 'close' : 'menu'} /></button>
       </div>
       <nav id="main-navigation" className={`navigation ${menu ? 'is-open' : ''}`} aria-label="Главная навигация">
-        <div className="container nav-inner">{navigation.map(([id, text], index) => <Fragment key={id}>{index > 0 && <span className="nav-divider" aria-hidden="true" />}<a href={`#${id}`} onClick={() => setMenu(false)}>{text}</a></Fragment>)}<a className="nav-contact" href={contacts.phones[0].href}><Icon name="phone" size={16} /> Позвонить нам</a></div>
+        <div className="container nav-inner">{navigation.map(([id, text], index) => <Fragment key={id}>{index > 0 && <span className="nav-divider" aria-hidden="true" />}<a href={`#${id}`} onClick={(event) => navigateToSection(event, id)}>{text}</a></Fragment>)}<a className="nav-contact" href={contacts.phones[0].href}><Icon name="phone" size={16} /> Позвонить нам</a></div>
       </nav>
     </header>
 
@@ -207,17 +231,30 @@ export default function App() {
 
       <section className="container section" id="materials" aria-labelledby="materials-title"><div className="section-heading"><div><span className="eyebrow">Полезно знать</span><h2 id="materials-title">Начните с главного</h2></div><a className="text-button" href="https://www.garant.ru/news/" target="_blank" rel="noreferrer">Правовые новости на ГАРАНТ.РУ <Icon name="external" size={18} /><span className="sr-only"> (новая вкладка)</span></a></div>
         <div className="materials-grid">{materials.map((material, index) => <article className="material-card" key={material.id}><div className={`material-cover cover-${index}`} aria-hidden="true"><span className="cover-line" /><Icon name={material.icon} size={70} /><span className="cover-orbit" /></div><div className="material-body"><span className="eyebrow">{material.category}</span><h3><button onClick={() => setModal({ type: 'article', title: material.title, article: material })}>{material.title}</button></h3><p>{material.intro}</p></div></article>)}</div>
-        {latestNews.length > 0 && <div className="rss-preview" aria-labelledby="rss-title">
+        {latestNews.length > 0 && <div className="rss-preview" id="news" aria-labelledby="rss-title">
           <div className="rss-heading"><div><h2 id="rss-title">Последние правовые новости</h2><p className="eyebrow">Коротко о важных изменениях. Полные материалы — на сайте ГАРАНТ.РУ.</p></div><a className="text-button" href="https://www.garant.ru/news/" target="_blank" rel="noreferrer">Все новости <Icon name="external" size={18} /><span className="sr-only"> (новая вкладка)</span></a></div>
-          <div className="rss-grid">{latestNews.map((news) => <article className="rss-card" key={news.href}>
-            {news.image && <a className="rss-image-link" href={news.href} target="_blank" rel="noreferrer" aria-label={`Открыть новость: ${news.title}`}><img src={news.image} alt="" loading="lazy" /></a>}
-            <div className="rss-card-body"><div className="rss-meta"><time dateTime={news.date}>{new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' }).format(new Date(news.date))}</time><span>{news.category}</span></div><h4><a href={news.href} target="_blank" rel="noreferrer">{news.title}<span className="sr-only"> (на garant.ru, новая вкладка)</span></a></h4><p>{news.description}</p><a className="rss-read-more" href={news.href} target="_blank" rel="noreferrer">Читать новость <Icon name="external" size={16} /><span className="sr-only"> (новая вкладка)</span></a></div>
-          </article>)}</div>
+          <NewsSlider news={latestNews} />
           <p className="rss-source-note">Источник: <a href="https://rss.garant.ru/news/" target="_blank" rel="noreferrer">официальная RSS-лента ГАРАНТ.РУ</a>. Обновление выполняется автоматически.</p>
         </div>}
       </section>
 
-      <section className="container section about" id="about" aria-labelledby="about-title"><div><span className="eyebrow">Ваш региональный партнер</span><h2 id="about-title">ГАРАНТ — в системе<br />МЫ — рядом</h2><p>«Гарант-Сервис Самара» представляет систему ГАРАНТ в Самарской области. Помогаем выбрать наполнение, освоить инструменты и получать поддержку в работе.</p><a className="text-button" href="#contacts">Познакомиться с командой <Icon name="arrow" size={18} /></a></div><div className="about-steps">{[['01', 'Разберемся в задачах', 'Обсудим вашу сферу работы и нужные материалы.'], ['02', 'Покажем возможности', 'Проведем демонстрацию на понятных примерах.'], ['03', 'Поможем освоиться', 'Расскажем об обучении и сопровождении.']].map(([number, title, text]) => <div className="about-step" key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></div>)}</div></section>
+      <section className="container section about" id="about" aria-labelledby="about-title">
+        <div>
+          <span className="eyebrow">Ваш региональный партнер</span>
+          <h2 id="about-title">ГАРАНТ — в системе<br />мы — рядом</h2>
+          <p><strong>«Гарант-Сервис Самара»</strong> — региональный партнёр компании «Гарант», уже более 30 лет помогающий организациям и специалистам Самарской области уверенно ориентироваться в законодательстве и эффективно решать профессиональные задачи.</p>
+          <p>Мы не просто предоставляем доступ к системе ГАРАНТ. Мы помогаем подобрать подходящее решение, разобраться в современных правовых инструментах и использовать их возможности с максимальной пользой.</p>
+          <p>А главное — остаёмся рядом, обеспечивая профессиональное сопровождение, обучение и поддержку на каждом этапе работы.</p>
+          <button className="text-button" type="button" aria-haspopup="dialog" onClick={() => setModal({ type: 'company', title: 'О компании «Гарант-Сервис Самара»' })}>Познакомиться с компанией <Icon name="arrow" size={18} /></button>
+        </div>
+        <div className="about-steps">{[
+          ['01', 'Разберёмся в задачах', 'Обсудим вашу сферу работы, задачи специалистов и нужные материалы.'],
+          ['02', 'Подберём подходящее решение', 'Поможем выбрать оптимальное наполнение и сервисы под ваши рабочие процессы.'],
+          ['03', 'Покажем возможности', 'Проведём демонстрацию системы на понятных практических примерах.'],
+          ['04', 'Поможем освоиться', 'Расскажем об обучении, сопровождении и поддержке пользователей.'],
+          ['05', 'Будем рядом в работе', 'Окажем сервисную помощь и поможем получать максимум пользы от системы ГАРАНТ.']
+        ].map(([number, title, text]) => <div className="about-step" key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></div>)}</div>
+      </section>
 
       <section className="container section faq" aria-labelledby="faq-title"><div><span className="eyebrow">Есть вопрос?</span><h2 id="faq-title">Отвечаем<br />по существу</h2></div><div className="faq-list">{questions.map(([question, answer]) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></section>
 
@@ -226,7 +263,8 @@ export default function App() {
 
     <footer className="footer"><div className="container"><div className="footer-top"><a className="brand brand-modern" href="#home"><img src={asset('gss-logo-modern-v1.png')} width="2172" height="724" alt="ГАРАНТ-СЕРВИС САМАРА" /></a><p>Правовая информация.<br />Профессиональная поддержка.</p><a href="#home" className="text-button">Наверх ↑</a></div><div className="footer-bottom"><span>© {new Date().getFullYear()} ЗАО «Гарант-Сервис Самара»</span><button className="text-button" onClick={() => setModal({ type: 'privacy', title: 'Как работает обратная связь' })}>Обработка данных</button><span>Состав и условия услуг уточняйте у специалистов.</span></div></div></footer>
 
-    {modal && <Dialog title={modal.title} onClose={() => setModal(null)}>
+    {modal && <Dialog title={modal.title} onClose={() => setModal(null)} className={modal.type === 'company' ? 'company-dialog' : ''}>
+      {modal.type === 'company' && <CompanyProfile />}
       {modal.type === 'request' && <RequestForm topic={modal.title} />}
       {modal.type === 'article' && <div className="article-content"><p className="article-lead">{modal.article.intro}</p>{modal.article.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}<button className="button" onClick={() => request('Вопрос по подбору системы ГАРАНТ')}>Обсудить с нами <Icon name="arrow" size={18} /></button></div>}
       {modal.type === 'privacy' && <div className="article-content"><p>Форма подготавливает письмо в вашей почтовой программе. Сайт не отправляет его автоматически и не сохраняет введенные данные на сервере или в браузерном хранилище.</p><p>Нажимая «Открыть письмо», вы передаете введенный текст своей почтовой программе. Проверьте его перед отправкой на {contacts.email}. Без почтовой программы можно скопировать текст и отправить письмо самостоятельно.</p><p>Информацию об обработке полученной корреспонденции можно уточнить у организации по телефону или электронной почте.</p></div>}

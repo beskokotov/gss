@@ -14,7 +14,7 @@ export const contacts = {
 
 export const navigation = [
   ['system', 'Система ГАРАНТ'], ['solutions', 'Решения'],
-  ['services', 'Услуги и поддержка'], ['materials', 'Полезное'],
+  ['services', 'Услуги и поддержка'], ['news', 'Новости'],
   ['about', 'О компании'], ['contacts', 'Контакты']
 ];
 
