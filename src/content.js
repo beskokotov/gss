@@ -1,3 +1,6 @@
+import latestNews from './news-feed.json';
+export { latestNews };
+
 export const contacts = {
   name: 'Гарант-Сервис Самара',
   address: '443086, г. Самара, ул. Ерошевского, 3',

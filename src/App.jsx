@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import Icon from './Icon.jsx';
 import HeroSlideshow from './HeroSlideshow.jsx';
-import { contacts, navigation, professions, services, materials, questions, makeMailto } from './content.js';
+import { contacts, navigation, professions, services, materials, latestNews, questions, makeMailto } from './content.js';
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/${name}`;
 const heroSlides = ['hero-slide-1.webp', 'hero-slide-2.webp', 'hero-slide-3.webp', 'hero-slide-4.webp', 'hero-slide-5.webp'].map(asset);
@@ -82,7 +82,7 @@ export default function App() {
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     if (!motion || reducedMotion?.matches || !window.IntersectionObserver) return;
 
-    const cards = [...document.querySelectorAll('.quick-links>a, .capability, .profession-panel, .service-card, .support-strip, .material-card, .about-step, .contact-panel')];
+    const cards = [...document.querySelectorAll('.quick-links>a, .capability, .profession-panel, .service-card, .support-strip, .material-card, .rss-card, .about-step, .contact-panel')];
     const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
@@ -207,6 +207,14 @@ export default function App() {
 
       <section className="container section" id="materials" aria-labelledby="materials-title"><div className="section-heading"><div><span className="eyebrow">Полезно знать</span><h2 id="materials-title">Начните с главного</h2></div><a className="text-button" href="https://www.garant.ru/news/" target="_blank" rel="noreferrer">Правовые новости на ГАРАНТ.РУ <Icon name="external" size={18} /><span className="sr-only"> (новая вкладка)</span></a></div>
         <div className="materials-grid">{materials.map((material, index) => <article className="material-card" key={material.id}><div className={`material-cover cover-${index}`} aria-hidden="true"><span className="cover-line" /><Icon name={material.icon} size={70} /><span className="cover-orbit" /></div><div className="material-body"><span className="eyebrow">{material.category}</span><h3><button onClick={() => setModal({ type: 'article', title: material.title, article: material })}>{material.title}</button></h3><p>{material.intro}</p></div></article>)}</div>
+        {latestNews.length > 0 && <div className="rss-preview" aria-labelledby="rss-title">
+          <div className="rss-heading"><div><h2 id="rss-title">Последние правовые новости</h2><p className="eyebrow">Коротко о важных изменениях. Полные материалы — на сайте ГАРАНТ.РУ.</p></div><a className="text-button" href="https://www.garant.ru/news/" target="_blank" rel="noreferrer">Все новости <Icon name="external" size={18} /><span className="sr-only"> (новая вкладка)</span></a></div>
+          <div className="rss-grid">{latestNews.map((news) => <article className="rss-card" key={news.href}>
+            {news.image && <a className="rss-image-link" href={news.href} target="_blank" rel="noreferrer" aria-label={`Открыть новость: ${news.title}`}><img src={news.image} alt="" loading="lazy" /></a>}
+            <div className="rss-card-body"><div className="rss-meta"><time dateTime={news.date}>{new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' }).format(new Date(news.date))}</time><span>{news.category}</span></div><h4><a href={news.href} target="_blank" rel="noreferrer">{news.title}<span className="sr-only"> (на garant.ru, новая вкладка)</span></a></h4><p>{news.description}</p><a className="rss-read-more" href={news.href} target="_blank" rel="noreferrer">Читать новость <Icon name="external" size={16} /><span className="sr-only"> (новая вкладка)</span></a></div>
+          </article>)}</div>
+          <p className="rss-source-note">Источник: <a href="https://rss.garant.ru/news/" target="_blank" rel="noreferrer">официальная RSS-лента ГАРАНТ.РУ</a>. Обновление выполняется автоматически.</p>
+        </div>}
       </section>
 
       <section className="container section about" id="about" aria-labelledby="about-title"><div><span className="eyebrow">Ваш региональный партнер</span><h2 id="about-title">ГАРАНТ — в системе<br />МЫ — рядом</h2><p>«Гарант-Сервис Самара» представляет систему ГАРАНТ в Самарской области. Помогаем выбрать наполнение, освоить инструменты и получать поддержку в работе.</p><a className="text-button" href="#contacts">Познакомиться с командой <Icon name="arrow" size={18} /></a></div><div className="about-steps">{[['01', 'Разберемся в задачах', 'Обсудим вашу сферу работы и нужные материалы.'], ['02', 'Покажем возможности', 'Проведем демонстрацию на понятных примерах.'], ['03', 'Поможем освоиться', 'Расскажем об обучении и сопровождении.']].map(([number, title, text]) => <div className="about-step" key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></div>)}</div></section>

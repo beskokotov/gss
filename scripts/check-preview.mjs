@@ -27,7 +27,12 @@ try {
   assert.equal(document.querySelectorAll('h1').length, 1);
   assert.equal(document.querySelectorAll('script[src],script[type="module"],link[rel="stylesheet"]').length, 0);
   for (const script of document.scripts) new vm.Script(script.textContent);
-  for (const image of document.images) assert.ok(image.src.startsWith('data:image/'));
+  for (const image of document.images) {
+    const isNewsImage = image.closest('.rss-card');
+    assert.ok(isNewsImage
+      ? image.src.startsWith('https://www.garant.ru/files/')
+      : image.src.startsWith('data:image/'));
+  }
   assert.ok(document.querySelector('link[rel="icon"]').href.startsWith('data:image/'));
   const css = [...document.querySelectorAll('style')].map(style => style.textContent).join('\n');
   for (const match of css.matchAll(/url\(([^)]+)\)/g)) assert.ok(match[1].replace(/["']/g, '').startsWith('data:'));

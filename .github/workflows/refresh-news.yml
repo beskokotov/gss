@@ -1,0 +1,46 @@
+name: Refresh Garant news
+
+on:
+  schedule:
+    - cron: '13 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-garant-news
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the site
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Read the RSS feed
+        run: node scripts/update-rss.mjs
+
+      - name: Build the standalone site
+        run: |
+          npm ci
+          npm run build:preview
+          cp preview.html docs/index.html
+
+      - name: Publish changed news snapshot
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/news-feed.json preview.html docs/index.html
+          if git diff --cached --quiet; then
+            echo 'No news changes to publish.'
+            exit 0
+          fi
+          git commit -m 'Обновить новости из RSS ГАРАНТ.РУ'
+          git push
