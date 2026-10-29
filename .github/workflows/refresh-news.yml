@@ -1,19 +1,21 @@
-name: Refresh Garant news
+name: Build and publish site
 
 on:
+  push:
+    branches: [main]
   schedule:
     - cron: '13 * * * *'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: refresh-garant-news
+  group: github-pages
   cancel-in-progress: false
 
 jobs:
-  refresh:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the site
@@ -24,23 +26,42 @@ jobs:
         with:
           node-version: 24
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Read the RSS feed
-        run: node scripts/update-rss.mjs
+        id: news
+        continue-on-error: true
+        run: npm run rss:update
 
-      - name: Build the standalone site
-        run: |
-          npm ci
-          npm run build:preview
-          cp preview.html docs/index.html
+      - name: Keep the saved news if the feed is unavailable
+        if: steps.news.outcome == 'failure'
+        run: echo '::warning::RSS is unavailable; publishing with the saved news snapshot.'
 
-      - name: Publish changed news snapshot
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/news-feed.json preview.html docs/index.html
-          if git diff --cached --quiet; then
-            echo 'No news changes to publish.'
-            exit 0
-          fi
-          git commit -m 'Обновить новости из RSS ГАРАНТ.РУ'
-          git push
+      - name: Test the site
+        run: npm test
+
+      - name: Build the Pages site
+        run: npm run build:pages
+
+      - name: Check the standalone preview
+        run: npm run check:preview
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

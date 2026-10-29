@@ -1,3 +1,6 @@
 node_modules/
 dist/
+_site/
+/preview.html
+/docs/index.html
 *.log

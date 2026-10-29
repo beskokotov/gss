@@ -14,6 +14,7 @@
     "assets": "node --use-env-proxy scripts/setup-assets.mjs",
     "rss:update": "node --use-env-proxy scripts/update-rss.mjs",
     "build:preview": "node scripts/build-preview.mjs",
+    "build:pages": "node scripts/build-pages.mjs",
     "check:preview": "node scripts/check-preview.mjs"
   },
   "dependencies": {
