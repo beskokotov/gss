@@ -184,6 +184,10 @@ export default function ProductHoverSlider({ items, icons, selected, motion, onS
     stopAuto();
     resetTilt();
     engine.current.pauseUntil = performance.now() + 1000;
+    if (window.matchMedia?.('(max-width: 700px)').matches) {
+      onSelect(Math.max(0, Math.min(items.length - 1, selected + direction)));
+      return;
+    }
     const element = track.current;
     const card = buttons.current[0]?.parentElement;
     const step = card ? card.offsetWidth + parseFloat(getComputedStyle(element).columnGap || 0) : element.clientWidth * .8;
