@@ -15,12 +15,6 @@
   <body>
     <div id="root"></div>
     <noscript>Для интерактивных возможностей включите JavaScript. Гарант-Сервис Самара: +7 (846) 207-0-702, info@gss.ru. Самара, ул. Ерошевского, 3, подъезд № 2, офис 323.</noscript>
-    <script type="module">
-      if (location.hostname === 'beskokotov.github.io') {
-        location.replace('./preview.html' + location.hash);
-      } else {
-        await import('/src/main.jsx');
-      }
-    </script>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -1,6 +1,15 @@
 node_modules/
 dist/
 _site/
+_hosting/
+server/vendor/
+server/tools/
+server/config.php
+server/rate-limits/
+server/.test/
+.env.local
+.env.*.local
 /preview.html
+/preview.html.tmp
 /docs/index.html
 *.log

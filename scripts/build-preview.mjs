@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { build } from 'vite';
 
@@ -6,7 +6,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const assetRoot = new URL('../public/assets/', import.meta.url);
 const mime = { png: 'image/png', webp: 'image/webp', woff2: 'font/woff2', woff: 'font/woff', otf: 'font/otf' };
 const names = [
-  'gss-logo.png', 'gss-logo-modern-v1.png', 'garant-logo-transparent.png', 'garant-logo-35-years.webp', 'hero-slide-1.webp', 'hero-slide-2.webp', 'hero-slide-3.webp', 'hero-slide-4.webp', 'hero-slide-5.webp',
+  'gss-logo.png', 'gss-logo-modern-v1.webp', 'garant-logo-35-years.webp', 'hero-slide-1.webp', 'hero-slide-2.webp', 'hero-slide-3.webp', 'hero-slide-4.webp', 'hero-slide-5.webp',
   'hero-slide-1-mobile.webp', 'hero-slide-2-mobile.webp', 'hero-slide-3-mobile.webp', 'hero-slide-4-mobile.webp', 'hero-slide-5-mobile.webp',
   'research-art.webp', 'OmegaUI-Regular-VF.woff2',
   ...Array.from({ length: 17 }, (_, index) => `product-icon-${String(index + 1).padStart(2, '0')}.webp`)
@@ -61,9 +61,17 @@ let html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 html = html.replace('href="./assets/gss-logo.png"', () => `href="${assets['gss-logo.png']}"`);
 html = html.replace('</head>', () => `<style>${String(styles[0].source)}</style>\n</head>`);
 html = html.replace(
-  /<script type="module">[\s\S]*?<\/script>/,
+  /<script type="module"(?: src="\/src\/main\.jsx")?>[\s\S]*?<\/script>/,
   () => `<script>${scripts[0].code.replace(/<\/script/gi, '<\\/script')}</script>`
 );
 if (html.includes('src="/src/main.jsx"') || html.includes('type="module"')) throw new Error('Unresolved module entry.');
-await writeFile(new URL('../preview.html', import.meta.url), html);
+const destination = new URL('../preview.html', import.meta.url);
+const temporary = new URL('../preview.html.tmp', import.meta.url);
+try {
+  await writeFile(temporary, html);
+  await rename(temporary, destination);
+} catch (error) {
+  await rm(temporary, { force: true });
+  throw error;
+}
 console.log('preview.html ready: open it directly in a browser, without Node.js or a server.');

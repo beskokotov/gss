@@ -22,7 +22,7 @@ export default function JourneySteps() {
         <span className="quick-step-title">{title}</span>
         <span className="quick-step-cover" id={`journey-cover-${index}`}><span>{description}</span></span>
       </button>
-      {index < steps.length - 1 && <span className="journey-connector" aria-hidden="true"><Icon name="arrow" size={18} /></span>}
+      {index < steps.length - 1 && <span className="journey-connector" aria-hidden="true"><Icon name="arrow" size={16} /></span>}
     </li>)}
   </ol>;
 }

@@ -1,0 +1,12 @@
+{
+  "name": "gss/contact-form",
+  "description": "SMTP delivery for the Garant-Service Samara request form",
+  "type": "project",
+  "require": {
+    "php": ">=8.2",
+    "ext-openssl": "*",
+    "ext-mbstring": "*",
+    "phpmailer/phpmailer": "^7.0"
+  },
+  "config": { "allow-plugins": false, "sort-packages": true }
+}

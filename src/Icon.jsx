@@ -1,4 +1,7 @@
 const paths = {
+  monitor: <><rect x="3" y="3" width="18" height="13" rx="2" /><path d="M8 21h8M12 16v5M7 7h10M7 11h6" /></>,
+  scales: <><path d="M12 3v18M4 21h16M5 6h14M6 6l-4 8h8ZM18 6l-4 8h8Z" /></>,
+  headphones: <><path d="M4 13V10a8 8 0 0 1 16 0v3M20 17v2a2 2 0 0 1-2 2h-4" /><rect x="3" y="11" width="4" height="7" rx="1" /><rect x="17" y="11" width="4" height="7" rx="1" /></>,
   ruler: <><path d="m3 16 13-13 5 5L8 21ZM12 7l2 2M8 11l2 2M4 15l2 2" /></>,
   chart: <><path d="M4 3v17h17M8 15v-4M13 15V7M18 15V4" /></>,
   arrow: <><path d="M5 12h14M13 6l6 6-6 6" /></>,

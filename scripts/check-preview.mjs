@@ -54,9 +54,11 @@ try {
   dialog.querySelector('[name="contact"]').value = 'demo@example.com';
   dialog.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
   await pause();
-  assert.ok(dialog.querySelector('.draft a').href.startsWith('mailto:info@gss.ru?'));
+  assert.ok(dialog.querySelector('[role="alert"]'));
+  assert.equal(dialog.querySelector('.request-success'), null);
+  assert.equal(dialog.querySelector('[name="contact"]').value, 'demo@example.com');
   assert.equal(errors.length, 0, errors.map(error => error.message).join('\n'));
-  process.stdout.write('Standalone preview passed: classic JavaScript, embedded assets, file URL, menu, tabs, dialog and mail preparation.\n');
+  process.stdout.write('Standalone preview passed: embedded assets, menu, products and honest offline form error.\n');
 } finally {
   dom.window.close();
 }

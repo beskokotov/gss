@@ -1,8 +1,8 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App.jsx';
-import { makeMailto, products } from './content.js';
+import { products } from './content.js';
 
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
@@ -10,6 +10,19 @@ beforeAll(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe('Ключевые сценарии сайта', () => {
+  it('открывает описание системы в окне и возвращает фокус к кнопке после закрытия', async () => {
+    const user = userEvent.setup(); render(<App />);
+    const button = screen.getByRole('button', { name: 'О системе', exact: true });
+    expect(screen.queryByRole('link', { name: 'О системе', exact: true })).toBeNull();
+    await user.click(button);
+    const dialog = screen.getByRole('dialog', { name: 'О системе ГАРАНТ' });
+    expect(within(dialog).getByRole('heading', { name: 'Что предлагает система ГАРАНТ' })).not.toBeNull();
+    expect(within(dialog).getAllByRole('listitem')).toHaveLength(6);
+    await user.click(within(dialog).getByRole('button', { name: 'Закрыть окно' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(button);
+  });
+
   it('связывает все внутренние ссылки с существующими разделами', () => {
     render(<App />);
     for (const link of document.querySelectorAll('a[href^="#"]')) {
@@ -52,21 +65,49 @@ describe('Ключевые сценарии сайта', () => {
     expect(within(group).getByRole('tab', { name: products[1].label }).getAttribute('aria-selected')).toBe('true');
   });
 
-  it('готовит письмо с выбранным направлением и не отправляет запрос на сервер', async () => {
-    const user = userEvent.setup(); const fetchSpy = vi.spyOn(globalThis, 'fetch'); render(<App />);
+  it('отправляет заявку через сервер и показывает подтверждение только после ответа', async () => {
+    const user = userEvent.setup();
+    let resolveDelivery;
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ token: 'test-token' }) })
+      .mockImplementationOnce(() => new Promise(resolve => { resolveDelivery = resolve; }));
+    render(<App />);
     await user.click(screen.getByRole('button', { name: 'Получить консультацию' }));
     const dialog = screen.getByRole('dialog');
     await user.type(within(dialog).getByLabelText('Как к вам обращаться'), 'Анна');
     await user.type(within(dialog).getByLabelText('Телефон или электронная почта'), 'anna@example.com');
     await user.type(within(dialog).getByLabelText('Ваша задача'), 'Нужны договоры и судебная практика');
-    await user.click(within(dialog).getByRole('button', { name: 'Подготовить письмо' }));
-    const href = within(dialog).getByRole('link', { name: 'Открыть письмо' }).getAttribute('href');
-    expect(decodeURIComponent(href)).toContain('Консультация по системе ГАРАНТ');
-    expect(decodeURIComponent(href)).toContain('Анна');
-    expect(href.startsWith('mailto:info@gss.ru?')).toBe(true);
-    expect(fetchSpy).not.toHaveBeenCalled();
-    await user.type(within(dialog).getByLabelText('Как к вам обращаться'), ' П.');
+    await user.click(within(dialog).getByRole('button', { name: 'Отправить заявку' }));
+    expect(within(dialog).getByRole('button', { name: 'Отправляем…' }).disabled).toBe(true);
+    expect(within(dialog).queryByText('Заявка отправлена')).toBeNull();
+    const payload = JSON.parse(fetchSpy.mock.calls[1][1].body);
+    expect(payload.topic).toBe('Консультация по системе ГАРАНТ');
+    expect(payload.name).toBe('Анна');
+    expect(payload.token).toBe('test-token');
+    expect(payload.requestId).toBeTruthy();
+    expect(fetchSpy.mock.calls[1][1].method).toBe('POST');
+    await act(async () => resolveDelivery({ ok: true, json: async () => ({ ok: true }) }));
+    expect(within(dialog).getByText('Заявка отправлена')).not.toBeNull();
     expect(within(dialog).queryByRole('link', { name: 'Открыть письмо' })).toBeNull();
+  });
+
+  it('сохраняет текст при ошибке и не показывает ложное подтверждение', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ token: 'test-token' }) })
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ code: 'UNAVAILABLE' }) });
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Получить консультацию' }));
+    const dialog = screen.getByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Как к вам обращаться'), 'Анна');
+    await user.type(within(dialog).getByLabelText('Телефон или электронная почта'), 'anna@example.com');
+    await user.type(within(dialog).getByLabelText('Ваша задача'), 'Нужна консультация');
+    await user.click(within(dialog).getByRole('button', { name: 'Отправить заявку' }));
+    expect(await within(dialog).findByRole('alert')).not.toBeNull();
+    expect(within(dialog).getByLabelText('Ваша задача').value).toBe('Нужна консультация');
+    expect(within(dialog).getByLabelText('Телефон или электронная почта').value).toBe('anna@example.com');
+    expect(within(dialog).queryByText('Заявка отправлена')).toBeNull();
+    expect(within(dialog).getByRole('button', { name: 'Отправить заявку' }).disabled).toBe(false);
   });
 
   it('открывает материал, закрывает окно и возвращает фокус', async () => {
@@ -82,7 +123,7 @@ describe('Ключевые сценарии сайта', () => {
 
   it('обрабатывает отмену диалога и отсутствие доступа к буферу', async () => {
     const user = userEvent.setup(); render(<App />);
-    await user.click(screen.getByRole('button', { name: 'Заказать демонстрацию' }));
+    await user.click(within(screen.getByRole('region', { name: /Давайте найдем/ })).getByRole('button', { name: 'Заказать демонстрацию' }));
     fireEvent(screen.getByRole('dialog'), new Event('cancel', { bubbles: true }));
     expect(screen.queryByRole('dialog')).toBeNull();
     vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new Error('denied'));
@@ -98,11 +139,4 @@ describe('Ключевые сценарии сайта', () => {
     expect(document.querySelector('.site').dataset.motion).toBe('on');
   });
 
-  it('корректно кодирует переносы и специальные символы письма', () => {
-    const uri = makeMailto({ name: 'Иван & Анна', contact: '+7 900 000', message: 'Вопрос? № 1\nПродолжение', topic: 'ГАРАНТ' });
-    const query = new URLSearchParams(uri.split('?')[1]);
-    expect(query.get('subject')).toBe('ГАРАНТ');
-    expect(query.get('body')).toContain('Иван & Анна');
-    expect(query.get('body')).toContain('Вопрос? № 1\nПродолжение');
-  });
 });

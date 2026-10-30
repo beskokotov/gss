@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Icon from './Icon.jsx';
 
+const dateFormatter = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' });
+
 export default function NewsSlider({ news }) {
   const track = useRef(null);
   const animation = useRef(null);
@@ -96,7 +98,7 @@ export default function NewsSlider({ news }) {
       }}>
       {news.map((item, index) => <article className="rss-card" key={item.href} aria-label={`${index + 1} из ${news.length}`}>
         {item.image && <a className="rss-image-link" href={item.href} target="_blank" rel="noreferrer" aria-label={`Открыть новость: ${item.title}`}><img src={item.image} alt="" loading="lazy" /></a>}
-        <div className="rss-card-body"><div className="rss-meta"><time dateTime={item.date}>{new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' }).format(new Date(item.date))}</time><span>{item.category}</span></div><h4><a href={item.href} target="_blank" rel="noreferrer">{item.title}<span className="sr-only"> (на garant.ru, новая вкладка)</span></a></h4><p>{item.description}</p><a className="rss-read-more" href={item.href} target="_blank" rel="noreferrer">Читать новость <Icon name="external" size={16} /><span className="sr-only"> (новая вкладка)</span></a></div>
+        <div className="rss-card-body"><div className="rss-meta"><time dateTime={item.date}>{dateFormatter.format(new Date(item.date))}</time><span>{item.category}</span></div><h4><a href={item.href} target="_blank" rel="noreferrer">{item.title}<span className="sr-only"> (на garant.ru, новая вкладка)</span></a></h4><p>{item.description}</p><a className="rss-read-more" href={item.href} target="_blank" rel="noreferrer">Читать новость <Icon name="external" size={16} /><span className="sr-only"> (новая вкладка)</span></a></div>
       </article>)}
     </div>
     <div className="rss-slider-controls"><button className="rss-slider-button rss-slider-prev" type="button" aria-label="Предыдущая новость" aria-controls="rss-news-track" disabled={position.atStart} onClick={() => move(-1)}><Icon name="arrow" size={20} /></button><button className="rss-slider-button" type="button" aria-label="Следующая новость" aria-controls="rss-news-track" disabled={position.atEnd} onClick={() => move(1)}><Icon name="arrow" size={20} /></button>{position.atEnd && !position.atStart && <button className="text-button rss-slider-reset" type="button" aria-controls="rss-news-track" onClick={() => {

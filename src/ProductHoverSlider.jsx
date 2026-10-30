@@ -8,9 +8,13 @@ export default function ProductHoverSlider({ items, icons, selected, motion, onS
   const engine = useRef({ frame: null, velocity: 0, target: 0, last: null, position: 0, pauseUntil: 0 });
   const tilt = useRef(null);
   const [edges, setEdges] = useState({ start: true, end: false });
+  const [media] = useState(() => ({
+    pointer: window.matchMedia?.('(hover: hover) and (pointer: fine)'),
+    reducedMotion: window.matchMedia?.('(prefers-reduced-motion: reduce)')
+  }));
 
   function supportsMotion() {
-    return motion && window.matchMedia?.('(hover: hover) and (pointer: fine)').matches && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    return motion && media.pointer?.matches && !media.reducedMotion?.matches;
   }
 
   function stopAuto(immediate = true) {
@@ -69,7 +73,7 @@ export default function ProductHoverSlider({ items, icons, selected, motion, onS
     const state = tilt.current;
     if (state?.frame !== null && state?.frame !== undefined) cancelAnimationFrame(state.frame);
     if (state?.button) {
-      for (const name of ['--tilt-x', '--tilt-y', '--pointer-x', '--pointer-y', '--hover-scale']) state.button.style.removeProperty(name);
+      for (const name of ['--tilt-x', '--tilt-y', '--pointer-x', '--pointer-y']) state.button.style.removeProperty(name);
       state.button.parentElement.removeAttribute('data-active');
     }
     tilt.current = null;
@@ -81,7 +85,6 @@ export default function ProductHoverSlider({ items, icons, selected, motion, onS
     const button = event.currentTarget;
     tilt.current = { button, bounds: button.getBoundingClientRect(), x: event.clientX, y: event.clientY, frame: null };
     button.parentElement.dataset.active = 'true';
-    button.style.setProperty('--hover-scale', '1');
   }
 
   function followTilt(event) {
@@ -111,7 +114,7 @@ export default function ProductHoverSlider({ items, icons, selected, motion, onS
     }
     const stop = () => { stopAuto(); resetTilt(); };
     const resize = () => { stop(); update(); };
-    const preference = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    const preference = media.reducedMotion;
     if (!motion || preference?.matches) stop();
     update();
     element.addEventListener('scroll', update, { passive: true });
@@ -121,6 +124,7 @@ export default function ProductHoverSlider({ items, icons, selected, motion, onS
     window.addEventListener('scroll', stop, { passive: true });
     document.addEventListener('visibilitychange', stop);
     preference?.addEventListener('change', stop);
+    media.pointer?.addEventListener('change', stop);
     const observer = window.ResizeObserver ? new ResizeObserver(resize) : null;
     observer?.observe(element);
     return () => {
@@ -131,10 +135,11 @@ export default function ProductHoverSlider({ items, icons, selected, motion, onS
       window.removeEventListener('scroll', stop);
       document.removeEventListener('visibilitychange', stop);
       preference?.removeEventListener('change', stop);
+      media.pointer?.removeEventListener('change', stop);
       observer?.disconnect();
       stop();
     };
-  }, [motion]);
+  }, [motion, media]);
 
   useEffect(() => {
     stopAuto();
@@ -148,7 +153,7 @@ export default function ProductHoverSlider({ items, icons, selected, motion, onS
     let target = element.scrollLeft;
     if (left < element.scrollLeft + padding) target = left - padding;
     else if (right > element.scrollLeft + element.clientWidth - padding) target = right - element.clientWidth + padding;
-    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const reducedMotion = media.reducedMotion?.matches;
     engine.current.pauseUntil = performance.now() + 700;
     if (Math.abs(target - element.scrollLeft) > 1) element.scrollTo?.({ left: target, behavior: reducedMotion ? 'instant' : 'smooth' });
   }, [selected]);
@@ -172,7 +177,7 @@ export default function ProductHoverSlider({ items, icons, selected, motion, onS
     resetTilt();
     engine.current.pauseUntil = performance.now() + 1000;
     track.current.focus({ preventScroll: true });
-    track.current.scrollTo({ left: 0, behavior: motion && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'instant' });
+    track.current.scrollTo({ left: 0, behavior: motion && !media.reducedMotion?.matches ? 'smooth' : 'instant' });
   }
 
   function scrollByArrow(direction) {
@@ -182,7 +187,7 @@ export default function ProductHoverSlider({ items, icons, selected, motion, onS
     const element = track.current;
     const card = buttons.current[0]?.parentElement;
     const step = card ? card.offsetWidth + parseFloat(getComputedStyle(element).columnGap || 0) : element.clientWidth * .8;
-    element.scrollBy({ left: direction * step, behavior: motion && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'instant' });
+    element.scrollBy({ left: direction * step, behavior: motion && !media.reducedMotion?.matches ? 'smooth' : 'instant' });
   }
 
   return <div className="product-hover-slider" ref={host} data-direction="none" onPointerMove={followPointer} onPointerLeave={() => { stopAuto(false); resetTilt(); }} onPointerCancel={() => { stopAuto(); resetTilt(); }} onPointerDown={() => stopAuto()} onFocusCapture={() => { stopAuto(); resetTilt(); }}>
@@ -195,8 +200,6 @@ export default function ProductHoverSlider({ items, icons, selected, motion, onS
         </button>
       </div>)}
     </div>
-    <span className="product-hover-edge product-hover-edge-left" aria-hidden="true" hidden={edges.start}><Icon name="arrow" size={20} /></span>
-    <span className="product-hover-edge product-hover-edge-right" aria-hidden="true" hidden={edges.end}><Icon name="arrow" size={20} /></span>
     <div className="product-slider-controls">
       <button type="button" className="rss-slider-button product-slider-prev" aria-label="Предыдущие продукты" aria-controls="product-strip" disabled={edges.start} onClick={() => scrollByArrow(-1)}><Icon name="arrow" size={19} /></button>
       <button type="button" className="rss-slider-button" aria-label="Следующие продукты" aria-controls="product-strip" disabled={edges.end} onClick={() => scrollByArrow(1)}><Icon name="arrow" size={19} /></button>
