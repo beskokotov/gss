@@ -4,6 +4,7 @@ import HeroSlideshow from './HeroSlideshow.jsx';
 import NewsSlider from './NewsSlider.jsx';
 import CompanyProfile from './CompanyProfile.jsx';
 import ProductHoverSlider from './ProductHoverSlider.jsx';
+import JourneySteps from './JourneySteps.jsx';
 import ProductDescription from './ProductDescription.jsx';
 import { productDescriptions } from './product-descriptions.js';
 import { contacts, navigation, products, services, materials, latestNews, questions, makeMailto } from './content.js';
@@ -102,7 +103,7 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (event) => { if (event.key === 'Escape' && menu) { setMenu(false); menuButton.current?.focus(); } };
-    const onResize = () => { if (window.innerWidth > 1000) setMenu(false); };
+    const onResize = () => { if (window.innerWidth > 1200) setMenu(false); };
     document.addEventListener('keydown', onKey);
     window.addEventListener('resize', onResize);
     return () => { document.removeEventListener('keydown', onKey); window.removeEventListener('resize', onResize); };
@@ -112,7 +113,7 @@ export default function App() {
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     if (!motion || reducedMotion?.matches || !window.IntersectionObserver) return;
 
-    const cards = [...document.querySelectorAll('.quick-links>a, .capability, .product-hover-slider, .profession-panel, .service-card, .support-strip, .material-card, .rss-preview, .about-step, .contact-panel')];
+    const cards = [...document.querySelectorAll('.quick-step, .capability, .product-hover-slider, .profession-panel, .service-card, .support-strip, .material-card, .rss-preview, .about-step, .contact-panel')];
     const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
@@ -160,25 +161,17 @@ export default function App() {
 
   return <div className="site" data-motion={motion ? 'on' : 'off'}>
     <a className="skip-link" href="#main">Перейти к содержанию</a>
-    <div className="utility"><div className="container utility-inner">
-      <span><Icon name="pin" size={14} /> Самара и Самарская область</span>
-      <span className="partner-note">Региональный партнер компании «ГАРАНТ»</span>
-      <a href="https://www.garant.ru/" target="_blank" rel="noreferrer">Портал ГАРАНТ.РУ <Icon name="external" size={14} /><span className="sr-only"> (новая вкладка)</span></a>
-    </div></div>
-
     <header className="header">
       <div className="container masthead">
         <a className="brand brand-modern" href="#home" aria-label="Гарант-Сервис Самара — главная">
           <img src={asset('gss-logo-modern-v1.png')} alt="Гарант-Сервис Самара" width="2172" height="724" />
         </a>
-        <a className="garant-brand" href="https://www.garant.ru/" aria-label="ГАРАНТ — 35 лет рядом с вами"><img src={asset('garant-logo-35-years.webp')} alt="ГАРАНТ — 35 лет рядом с вами" width="640" height="256" /></a>
-        <a className="header-phone" href={contacts.phones[0].href}>{contacts.phones[0].label}<small>Связаться с командой</small></a>
+        <nav id="main-navigation" className={`navigation ${menu ? 'is-open' : ''}`} aria-label="Главная навигация">
+          <div className="nav-inner">{navigation.map(([id, text], index) => <Fragment key={id}>{index > 0 && <span className="nav-divider" aria-hidden="true" />}<a href={`#${id}`} onClick={(event) => navigateToSection(event, id)}>{text}</a></Fragment>)}</div>
+        </nav>
         <button className="button button-small header-request" onClick={() => request('Консультация по системе ГАРАНТ')}>Получить консультацию</button>
         <button ref={menuButton} className="icon-button menu-toggle" aria-label={menu ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={menu} aria-controls="main-navigation" onClick={() => setMenu(!menu)}><Icon name={menu ? 'close' : 'menu'} /></button>
       </div>
-      <nav id="main-navigation" className={`navigation ${menu ? 'is-open' : ''}`} aria-label="Главная навигация">
-        <div className="container nav-inner">{navigation.map(([id, text], index) => <Fragment key={id}>{index > 0 && <span className="nav-divider" aria-hidden="true" />}<a href={`#${id}`} onClick={(event) => navigateToSection(event, id)}>{text}</a></Fragment>)}<a className="nav-contact" href={contacts.phones[0].href}><Icon name="phone" size={16} /> Позвонить нам</a></div>
-      </nav>
     </header>
 
     <main id="main">
@@ -194,9 +187,7 @@ export default function App() {
           <HeroSlideshow images={heroSlides} mobileImages={heroSlidesMobile} motion={motion} />
           <button className="motion-toggle" aria-pressed={!motion} onClick={() => setMotion(!motion)}>{motion ? 'Приостановить анимацию' : 'Включить анимацию'}</button>
         </div>
-        <div className="quick-links">{[
-          ['document', 'Найти правовую основу', 'system'], ['layers', 'Подобрать решение', 'solutions'], ['chat', 'Получить поддержку', 'services'], ['pin', 'Связаться с нами', 'contacts']
-        ].map(([icon, label, id]) => <a key={id} href={`#${id}`}><span className="quick-icon"><Icon name={icon} /></span>{label}<Icon name="arrow" size={18} /></a>)}</div>
+        <JourneySteps />
       </section>
 
       <section className="container section" id="system" aria-labelledby="system-title">
@@ -257,7 +248,7 @@ export default function App() {
       <section className="container section" id="contacts" aria-labelledby="contacts-title"><div className="contact-panel"><div className="contact-intro"><span className="eyebrow">Гарант-Сервис Самара</span><h2 id="contacts-title">Давайте найдем<br />ваше решение</h2><p>Расскажите о своей задаче — обсудим возможности системы и следующий шаг.</p><button className="button button-white" onClick={() => request()}>Заказать демонстрацию <Icon name="arrow" size={20} /></button></div><div className="contact-data"><div className="contact-phones">{contacts.phones.map((phone) => <a key={phone.href} href={phone.href}>{phone.label}</a>)}</div><a className="contact-email" href={`mailto:${contacts.email}`}>{contacts.email}<Icon name="external" size={22} /></a><address>{contacts.address}<br />{contacts.office}</address><div className="contact-links"><a href={`https://yandex.ru/maps/?text=${encodeURIComponent(`${contacts.address}, Гарант-Сервис Самара`)}`} target="_blank" rel="noreferrer">Открыть карту <Icon name="external" size={16} /><span className="sr-only"> (новая вкладка)</span></a><button onClick={copyAddress}><Icon name="copy" size={16} /> Скопировать адрес</button></div><p className="copy-status" aria-live="polite">{copyStatus}</p></div></div></section>
     </main>
 
-    <footer className="footer"><div className="container"><div className="footer-top"><a className="brand brand-modern" href="#home"><img src={asset('gss-logo-modern-v1.png')} width="2172" height="724" alt="ГАРАНТ-СЕРВИС САМАРА" /></a><p>Правовая информация.<br />Профессиональная поддержка.</p><a href="#home" className="text-button">Наверх ↑</a></div><div className="footer-bottom"><span>© {new Date().getFullYear()} ЗАО «Гарант-Сервис Самара»</span><button className="text-button" onClick={() => setModal({ type: 'privacy', title: 'Как работает обратная связь' })}>Обработка данных</button><span>Состав и условия услуг уточняйте у специалистов.</span></div></div></footer>
+    <footer className="footer"><div className="container"><div className="footer-top"><a className="brand brand-modern" href="#home"><img src={asset('gss-logo-modern-v1.png')} width="2172" height="724" alt="ГАРАНТ-СЕРВИС САМАРА" /></a><a className="footer-garant-brand" href="https://www.garant.ru/" aria-label="ГАРАНТ — 35 лет рядом с вами"><img src={asset('garant-logo-35-years.webp')} alt="ГАРАНТ — 35 лет рядом с вами" width="640" height="256" /></a><div className="footer-contact-actions"><a className="footer-phone" href={contacts.phones[0].href}>{contacts.phones[0].label}<small>Связаться с командой</small></a><a href="#home" className="text-button">Наверх ↑</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} ЗАО «Гарант-Сервис Самара»</span><button className="text-button" onClick={() => setModal({ type: 'privacy', title: 'Как работает обратная связь' })}>Обработка данных</button><span>Состав и условия услуг уточняйте у специалистов.</span></div></div></footer>
 
     {modal && <Dialog title={modal.title} onClose={() => setModal(null)} className={modal.type === 'company' ? 'company-dialog' : ''}>
       {modal.type === 'company' && <CompanyProfile />}

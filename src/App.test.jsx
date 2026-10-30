@@ -40,7 +40,7 @@ describe('Ключевые сценарии сайта', () => {
       expect(tab.getAttribute('aria-selected')).toBe('true');
       expect(screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(`tab-product-${number}`);
       const descriptions = { 1: 'AI-ассистент', 2: 'Интеллектуальный подбор и анализ судебной практики', 3: 'Автоматизация составления документов', 4: 'Комплексная информация о контрагентах', 5: 'Автоматизация поиска и участия в госзакупках', 6: 'Создание облачного информационного банка внутренних документов вашей организации', 7: 'Автоматизация поиска, получения, размещения и обновления нормативно-правовых актов', 8: 'Создание и управление портфелем товарных знаков и патентов' };
-      expect(screen.getByRole('tabpanel').textContent).toContain(number === 9 ? 'Автоматизация процесса согласования и утверждения документов' : descriptions[number] ?? 'Бухгалтерский учет и налоги');
+      expect(screen.getByRole('tabpanel').textContent).toContain(number === 9 ? 'Автоматизация процесса согласования и утверждения документов' : descriptions[number] ?? 'Онлайн-сопровождение выпуска нового сертификата действующей электронной подписи');
       expect(within(screen.getByRole('tabpanel')).queryByRole('button')).toBeNull();
     }
     within(group).getByRole('tab', { name: products[16].label }).focus();
