@@ -8,6 +8,7 @@ server/config.php
 server/rate-limits/
 server/.test/
 .env.local
+.env
 .env.*.local
 /preview.html
 /preview.html.tmp

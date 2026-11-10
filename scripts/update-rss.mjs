@@ -1,7 +1,11 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const feedUrl = 'https://rss.garant.ru/news/';
-const outputUrl = new URL('../src/news-feed.json', import.meta.url);
+const outputOption = process.argv.indexOf('--output');
+if (outputOption !== -1 && !process.argv[outputOption + 1]) throw new Error('--output requires a file path.');
+const outputUrl = outputOption === -1 ? new URL('../src/news-feed.json', import.meta.url) : pathToFileURL(resolve(process.argv[outputOption + 1]));
 
 function decodeXml(value) {
   return value

@@ -138,7 +138,7 @@ export default function App() {
           <div className="nav-inner">{navigation.map(([id, text], index) => <Fragment key={id}>{index > 0 && <span className="nav-divider" aria-hidden="true" />}<a href={`#${id}`} onClick={(event) => navigateToSection(event, id)}>{text}</a></Fragment>)}</div>
         </nav>
         <a className="masthead-phone" href={contacts.phones[0].href} aria-label={`Позвонить по номеру ${contacts.phones[0].label}`}><Icon name="phone" size={17} /><span>{contacts.phones[0].label}</span></a>
-        <button className="button button-small header-request" onClick={() => request('Консультация по системе ГАРАНТ')}><span className="header-request-full">Получить консультацию</span><span className="header-request-compact">Консультация</span></button>
+        <button className="button button-small header-request" aria-label="Получить консультацию" onClick={() => request('Консультация по системе ГАРАНТ')}><span className="header-request-full">Получить консультацию</span><span className="header-request-compact">Консультация</span></button>
         <button ref={menuButton} className="icon-button menu-toggle" aria-label={menu ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={menu} aria-controls="main-navigation" onClick={() => setMenu(!menu)}><Icon name={menu ? 'close' : 'menu'} /></button>
       </div>
     </header>

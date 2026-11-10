@@ -1,7 +1,9 @@
 import { defineConfig } from 'vitest/config';
+import { newsSnapshot } from './scripts/lib/news-snapshot.mjs';
 
 export default defineConfig({
   base: './',
+  plugins: [newsSnapshot()],
   esbuild: { jsx: 'automatic' },
   build: {
     rollupOptions: {

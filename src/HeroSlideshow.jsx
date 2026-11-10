@@ -70,7 +70,7 @@ export default function HeroSlideshow({ images, mobileImages, motion }) {
   }, [activeSlide, motion, reducedMotion, pageHidden, images.length, unavailableSlides]);
 
   useEffect(() => {
-    if (images.length < 2) return;
+    if (!motion || reducedMotion || pageHidden || images.length < 2) return;
     const nextSlide = findNextSlide(activeSlide);
     if (nextSlide === activeSlide) return;
     const timer = window.setTimeout(() => {
@@ -82,7 +82,7 @@ export default function HeroSlideshow({ images, mobileImages, motion }) {
       });
     }, 1200);
     return () => window.clearTimeout(timer);
-  }, [activeSlide, images.length, unavailableSlides]);
+  }, [activeSlide, motion, reducedMotion, pageHidden, images.length, unavailableSlides]);
 
   const markUnavailable = (index) => {
     readySlides.current.delete(index);

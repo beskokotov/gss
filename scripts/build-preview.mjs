@@ -1,6 +1,7 @@
 import { readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { build } from 'vite';
+import { newsSnapshot } from './lib/news-snapshot.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const assetRoot = new URL('../public/assets/', import.meta.url);
@@ -8,7 +9,7 @@ const mime = { png: 'image/png', webp: 'image/webp', woff2: 'font/woff2', woff: 
 const names = [
   'gss-logo.png', 'gss-logo-modern-v1.webp', 'garant-logo-35-years.webp', 'hero-slide-1.webp', 'hero-slide-2.webp', 'hero-slide-3.webp', 'hero-slide-4.webp', 'hero-slide-5.webp',
   'hero-slide-1-mobile.webp', 'hero-slide-2-mobile.webp', 'hero-slide-3-mobile.webp', 'hero-slide-4-mobile.webp', 'hero-slide-5-mobile.webp',
-  'research-art.webp', 'OmegaUI-Regular-VF.woff2',
+  'OmegaUI-Regular-VF.woff2',
   ...Array.from({ length: 17 }, (_, index) => `product-icon-${String(index + 1).padStart(2, '0')}.webp`)
 ];
 const assets = Object.fromEntries(await Promise.all(names.map(async (name) => {
@@ -23,7 +24,7 @@ const result = await build({
   publicDir: false,
   esbuild: { jsx: 'automatic' },
   define: { 'process.env.NODE_ENV': JSON.stringify('production') },
-  plugins: [{
+  plugins: [newsSnapshot(), {
     name: 'standalone-preview-assets',
     enforce: 'pre',
     transform(code, id) {
@@ -58,6 +59,7 @@ const styles = output.filter(item => item.type === 'asset' && item.fileName.ends
 if (scripts.length !== 1 || styles.length !== 1) throw new Error('Expected one script and one stylesheet.');
 
 let html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+html = html.replace(/\s*<link rel="preload"[^>]*as="font"[^>]*\/>/, '');
 html = html.replace('href="./assets/gss-logo.png"', () => `href="${assets['gss-logo.png']}"`);
 html = html.replace('</head>', () => `<style>${String(styles[0].source)}</style>\n</head>`);
 html = html.replace(
