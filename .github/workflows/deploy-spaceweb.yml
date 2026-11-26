@@ -53,25 +53,6 @@ jobs:
           npm run check:hosting
           npm run check:preview
 
-      - name: Verify optional SpaceWeb host key offline
-        if: vars.SPACEWEB_SSH_HOST_KEY != ''
-        env:
-          SPACEWEB_HOST_KEY: ${{ vars.SPACEWEB_SSH_HOST_KEY }}
-        run: |
-          if [[ ! "$SPACEWEB_HOST_KEY" =~ ^ssh-ed25519\ [A-Za-z0-9+/]+={0,2}$ ]]; then
-            echo 'Expected an ssh-ed25519 public key and its base64 value.'
-            exit 1
-          fi
-          umask 077
-          public_key="$RUNNER_TEMP/spaceweb-host.pub"
-          printf '%s\n' "$SPACEWEB_HOST_KEY" > "$public_key"
-          fingerprint=$(ssh-keygen -E sha256 -lf "$public_key" | awk '{print $2}')
-          if [[ "$fingerprint" != 'SHA256:fDATcu43/zhAoS18DoD79nQjgUy1/Qmfq07t5VrDAew' ]]; then
-            echo 'SpaceWeb host key fingerprint mismatch.'
-            exit 1
-          fi
-          printf '%s %s\n' '77.222.40.35' "$SPACEWEB_HOST_KEY" > "$RUNNER_TEMP/spaceweb-known-hosts"
-
       - name: Stage static files and compare release manifests
         env:
           BASELINE_MANIFEST: ${{ inputs.baseline_manifest }}
@@ -89,3 +70,58 @@ jobs:
           name: gss-spaceweb-${{ github.sha }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/gss-spaceweb-release/
           if-no-files-found: error
+
+  check-ssh:
+    name: Check SpaceWeb SSH access
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Verify and pin the SpaceWeb host key
+        env:
+          SPACEWEB_HOST_KEY: ${{ vars.SPACEWEB_SSH_HOST_KEY }}
+        run: |
+          if [[ ! "$SPACEWEB_HOST_KEY" =~ ^ssh-ed25519\ [A-Za-z0-9+/]+={0,2}$ ]]; then
+            echo 'Set SPACEWEB_SSH_HOST_KEY to ssh-ed25519 followed by the base64 public key.'
+            exit 1
+          fi
+          umask 077
+          public_key="$RUNNER_TEMP/spaceweb-host.pub"
+          printf '%s\n' "$SPACEWEB_HOST_KEY" > "$public_key"
+          fingerprint=$(ssh-keygen -E sha256 -lf "$public_key" | awk '{print $2}')
+          if [[ "$fingerprint" != 'SHA256:fDATcu43/zhAoS18DoD79nQjgUy1/Qmfq07t5VrDAew' ]]; then
+            echo 'SpaceWeb host key fingerprint mismatch.'
+            exit 1
+          fi
+          printf '%s %s\n' '77.222.40.35' "$SPACEWEB_HOST_KEY" > "$RUNNER_TEMP/spaceweb-known-hosts"
+
+      - name: Check the SSH user and site directory
+        env:
+          SPACEWEB_SSH_PRIVATE_KEY: ${{ secrets.SPACEWEB_SSH_PRIVATE_KEY }}
+        run: |
+          if [[ -z "$SPACEWEB_SSH_PRIVATE_KEY" ]]; then
+            echo 'The SPACEWEB_SSH_PRIVATE_KEY secret is missing.'
+            exit 1
+          fi
+          umask 077
+          identity=$(mktemp "$RUNNER_TEMP/spaceweb-identity.XXXXXX")
+          trap 'rm -f -- "$identity"' EXIT
+          printf '%s\n' "${SPACEWEB_SSH_PRIVATE_KEY//$'\r'/}" > "$identity"
+          unset SPACEWEB_SSH_PRIVATE_KEY
+
+          timeout 30s ssh -F /dev/null -nT -p 22 -i "$identity" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o "UserKnownHostsFile=$RUNNER_TEMP/spaceweb-known-hosts" \
+            -o GlobalKnownHostsFile=/dev/null \
+            -o HostKeyAlgorithms=ssh-ed25519 \
+            -o UpdateHostKeys=no \
+            -o IdentitiesOnly=yes \
+            -o IdentityAgent=none \
+            -o PreferredAuthentications=publickey \
+            -o ClearAllForwardings=yes \
+            -o ConnectTimeout=10 \
+            bdvgssru@77.222.40.35 \
+            'whoami && pwd && test -d /home/b/bdvgssru/public_html'
+          echo 'SpaceWeb SSH check passed; public_html exists.'
