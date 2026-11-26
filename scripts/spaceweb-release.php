@@ -7,6 +7,8 @@ const PUBLIC_ROOT = '/home/b/bdvgssru/public_html';
 const SITE_URL = 'https://gss.ru';
 const FILE_LIMIT = 16 * 1024 * 1024;
 const RELEASE_LIMIT = 32 * 1024 * 1024;
+const SOUT_INDEX = 'sout/index.html';
+const SOUT_PDFS = ['sout/Раздел IV — Сводная ведомость.pdf', 'sout/Раздел V — Перечень мероприятий.pdf'];
 
 function requireThat(bool $condition, string $message): void
 {
@@ -17,7 +19,8 @@ function requireThat(bool $condition, string $message): void
 
 function allowed(string $path): bool
 {
-    return $path === 'index.html' || preg_match('~\Aassets/[A-Za-z0-9][A-Za-z0-9_-]*\.(css|js|png|webp|woff2)\z~', $path) === 1;
+    return $path === 'index.html' || $path === SOUT_INDEX || in_array($path, SOUT_PDFS, true)
+        || preg_match('~\Aassets/[A-Za-z0-9][A-Za-z0-9_-]*\.(css|js|png|webp|woff2)\z~', $path) === 1;
 }
 
 function releaseId(string $id): string
@@ -99,6 +102,9 @@ function manifestFiles(array $manifest, string $sha): array
         $files[$path] = $entry;
     }
     requireThat(isset($files['index.html']) && count($files) > 1, 'Release needs index.html and assets.');
+    if (array_intersect(array_keys($files), [SOUT_INDEX, ...SOUT_PDFS])) {
+        requireThat(isset($files[SOUT_INDEX], $files[SOUT_PDFS[0]], $files[SOUT_PDFS[1]]), 'Incomplete СОУТ release.');
+    }
     return indexLast($files);
 }
 
@@ -106,6 +112,11 @@ function indexLast(array $files): array
 {
     $index = $files['index.html'];
     unset($files['index.html']);
+    if (array_key_exists(SOUT_INDEX, $files)) {
+        $sout = $files[SOUT_INDEX];
+        unset($files[SOUT_INDEX]);
+        $files[SOUT_INDEX] = $sout;
+    }
     $files['index.html'] = $index;
     return $files;
 }
@@ -129,6 +140,9 @@ function pack(string $mode, string $id, string $sha, string $artifact): void
         $manifest = readJson($artifact . '/release-manifest.json');
         $payload = [];
         foreach (manifestFiles($manifest, $sha) as $path => $entry) {
+            if (str_starts_with($path, 'sout/')) {
+                directory($artifact . '/site/sout');
+            }
             $data = readFileBytes($artifact . '/site/' . $path);
             verifyBytes($data, $entry);
             $payload[$path] = base64_encode($data);
@@ -186,13 +200,29 @@ function restore(string $public, string $stateRoot, string $id): void
 {
     $work = $stateRoot . '/' . $id;
     $files = [];
-    foreach (indexLast(journal($stateRoot, $id)['files']) as $path => $entry) {
+    $entries = indexLast(journal($stateRoot, $id)['files']);
+    foreach ($entries as $path => $entry) {
         if ($entry['before'] !== null) {
             $files[$path] = [backupBytes($work, $entry['before']), $entry['before']['mode']];
+        } elseif ($path === SOUT_INDEX) {
+            $files[$path] = [null, null];
         }
     }
     foreach ($files as $path => [$data, $mode]) {
-        replaceFile($public . '/' . $path, $data, $mode, $work);
+        if ($data === null) {
+            removeSoutIndex($public, $entries[$path]['after']);
+        } else {
+            replaceFile($public . '/' . $path, $data, $mode, $work);
+        }
+    }
+}
+
+function removeSoutIndex(string $public, ?string $expected): void
+{
+    $target = $public . '/' . SOUT_INDEX;
+    if (filePresent($target)) {
+        requireThat(hash('sha256', readFileBytes($target)) === $expected, 'СОУТ page changed since deployment.');
+        requireThat(unlink($target), 'Cannot restore the previous absence of the СОУТ page.');
     }
 }
 
@@ -225,6 +255,11 @@ function transact(array $request, string $public, callable $check): void
     requireThat($lock !== false, 'Cannot open release lock.');
     try {
         requireThat(flock($lock, LOCK_EX | LOCK_NB), 'Another SpaceWeb release holds the lock.');
+        $sout = $public . '/sout';
+        if (file_exists($sout) || is_link($sout)) {
+            directory($sout);
+            requireThat(stat($sout)['dev'] === stat($stateRoot)['dev'], 'СОУТ and release directories must share a filesystem.');
+        }
         $state = filePresent($stateRoot . '/state.json')
             ? readJson($stateRoot . '/state.json') : ['last' => null, 'pending' => null];
         foreach (['last', 'pending'] as $key) {
@@ -254,6 +289,9 @@ function transact(array $request, string $public, callable $check): void
                 if ($entry['before'] !== null) {
                     $files[$path] = backupBytes($stateRoot . '/' . $state['last'], $entry['before']);
                     $rollback[$path] = $entry;
+                } elseif ($path === SOUT_INDEX) {
+                    $files[$path] = null;
+                    $rollback[$path] = $entry;
                 }
             }
             $next = $previous['parent'];
@@ -261,6 +299,16 @@ function transact(array $request, string $public, callable $check): void
         foreach (htmlAssets($files['index.html']) as $path) {
             requireThat($mode === 'deploy' ? isset($files[$path]) : filePresent($public . '/' . $path),
                 "HTML asset is missing: $path");
+        }
+        if (isset($files[SOUT_INDEX])) {
+            foreach (htmlAssets($files[SOUT_INDEX]) as $path) {
+                requireThat(isset($files[$path]) || ($mode === 'rollback' && filePresent($public . '/' . $path)),
+                    "СОУТ HTML asset is missing: $path");
+            }
+            if (!is_dir($sout)) {
+                requireThat(mkdir($sout, 0755) && chmod($sout, 0755), 'Cannot create public СОУТ directory.');
+                requireThat(stat($sout)['dev'] === stat($stateRoot)['dev'], 'СОУТ and release directories must share a filesystem.');
+            }
         }
 
         $work = $stateRoot . '/' . $id;
@@ -270,7 +318,7 @@ function transact(array $request, string $public, callable $check): void
         foreach ($files as $path => $data) {
             $target = $public . '/' . $path;
             $old = filePresent($target) ? readFileBytes($target) : null;
-            $after = hash('sha256', $data);
+            $after = $data === null ? null : hash('sha256', $data);
             $oldHash = $old === null ? null : hash('sha256', $old);
             requireThat(!isset($rollback[$path]) || $oldHash === $rollback[$path]['after'], "Live file changed since deployment: $path");
             if ($path !== 'index.html' && $oldHash === $after) {
@@ -297,6 +345,10 @@ function transact(array $request, string $public, callable $check): void
         saveState($stateRoot, ['last' => $state['last'], 'pending' => $id]);
         try {
             foreach ($changes as $path => $change) {
+                if ($path === SOUT_INDEX && $files[$path] === null) {
+                    removeSoutIndex($public, $change['before']['sha256']);
+                    continue;
+                }
                 $targetMode = $rollback[$path]['before']['mode'] ?? $change['before']['mode'] ?? 0644;
                 replaceFile($public . '/' . $path, $files[$path], $targetMode, $work);
             }
@@ -353,8 +405,18 @@ function verifySite(string $public, string $id, array $paths, ?callable $get = n
     $get ??= __NAMESPACE__ . '\\httpGet';
     $html = readFileBytes($public . '/index.html');
     requireThat($get('/', $id) === $html, 'The homepage does not serve the installed index.html.');
+    $references = htmlAssets($html);
+    if (filePresent($public . '/' . SOUT_INDEX)) {
+        $sout = readFileBytes($public . '/' . SOUT_INDEX);
+        requireThat($get('/sout/', $id) === $sout, 'The public СОУТ page differs.');
+        $references = [...$references, ...htmlAssets($sout)];
+        foreach (SOUT_PDFS as $path) {
+            requireThat($get('/sout/' . rawurlencode(substr($path, 5)), $id) === readFileBytes($public . '/' . $path),
+                "The public PDF differs: $path");
+        }
+    }
     $bundles = array_filter($paths, static fn ($path) => preg_match('/\.(js|css)\z/', $path) === 1);
-    foreach (array_unique([...htmlAssets($html), ...$bundles]) as $path) {
+    foreach (array_unique([...$references, ...$bundles]) as $path) {
         requireThat($get('/' . $path, $id) === readFileBytes($public . '/' . $path), "The public asset differs: $path");
     }
     $news = json_decode($get('/api/news', $id), true, 32, JSON_THROW_ON_ERROR);

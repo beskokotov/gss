@@ -69,9 +69,9 @@ foreach ($protected as $path => $bytes) {
 }
 
 $get = static fn (string $path) => match ($path) {
-    '/' => file_get_contents($public . '/index.html'),
+    '/', '/sout/' => file_get_contents($public . $path . 'index.html'),
     '/api/news' => '{"updatedAt":"2026-11-26T15:00:00Z","news":[{"title":"Fixture"}]}',
-    default => file_get_contents($public . $path),
+    default => file_get_contents($public . rawurldecode($path)),
 };
 $check = static fn ($web, $id, $paths) => verifySite($web, $id, $paths, $get);
 $brokenCheck = static fn ($web, $id, $paths) => verifySite($web, $id, $paths,
@@ -124,6 +124,29 @@ try {
     liveMatches($public, $old);
     fails(fn () => transact(['mode' => 'rollback', 'id' => '7-3'], $public, $check), 'No previous deployment');
 
+    $sout = $first + [Gss\SpaceWeb\SOUT_INDEX => '<base href="../">' . $first['index.html']];
+    foreach (Gss\SpaceWeb\SOUT_PDFS as $path) {
+        $sout[$path] = file_get_contents(__DIR__ . '/../public/' . $path);
+    }
+    $incomplete = $sout;
+    unset($incomplete[Gss\SpaceWeb\SOUT_PDFS[0]]);
+    fails(fn () => transact(request('9-1', $incomplete), $public, $check), 'Incomplete СОУТ release');
+    $extra = $sout + ['sout/extra.pdf' => 'out of scope'];
+    fails(fn () => transact(request('9-2', $extra), $public, $check), 'Invalid manifest file entry');
+    fails(fn () => transact(request('9-3', $sout), $public, $brokenCheck), 'Invalid news API response');
+    requireThat(!file_exists($public . '/' . Gss\SpaceWeb\SOUT_INDEX), 'Failed first release left the new entry visible.');
+    liveMatches($public, $old);
+    transact(request('9-4', $sout), $public, $check);
+    liveMatches($public, $sout);
+    $replacement = $sout;
+    $replacement[Gss\SpaceWeb\SOUT_INDEX] .= '<!-- next release -->';
+    transact(request('9-5', $replacement), $public, $check);
+    transact(['mode' => 'rollback', 'id' => '9-6'], $public, $check);
+    liveMatches($public, $sout);
+    transact(['mode' => 'rollback', 'id' => '9-7'], $public, $check);
+    requireThat(!file_exists($public . '/' . Gss\SpaceWeb\SOUT_INDEX), 'Rollback left the first СОУТ entry visible.');
+    liveMatches($public, $old + array_intersect_key($sout, array_flip(Gss\SpaceWeb\SOUT_PDFS)));
+
     $artifact = $temp . '/artifact';
     mkdir($artifact . '/site/assets', 0700, true);
     file_put_contents($artifact . '/release-manifest.json', json_encode($deploy['manifest'], JSON_THROW_ON_ERROR));
@@ -142,7 +165,7 @@ try {
     foreach ($protected as $path => $bytes) {
         requireThat(file_get_contents($public . $path) === $bytes, "Protected fixture was modified: $path");
     }
-    echo "SpaceWeb checks passed: backup, lock, allowlist, checksums, HTTPS checks, deploy, rollback and interrupted recovery.\n";
+    echo "SpaceWeb checks passed: backup, lock, allowlist, checksums, HTTPS checks, deploy, rollback, interrupted recovery and СОУТ.\n";
 } finally {
     $resolved = realpath($temp);
     requireThat($resolved !== false && dirname($resolved) === realpath(sys_get_temp_dir()), 'Unexpected fixture cleanup directory.');

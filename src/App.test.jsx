@@ -1,13 +1,56 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App.jsx';
 import { latestNews, products } from './content.js';
+import { soutDocuments, soutTitle } from './sout.js';
 
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+
+describe('Специальная оценка условий труда', () => {
+  afterEach(() => window.history.replaceState(null, '', '/'));
+
+  it('открывает окно из футера, закрывает по Escape и поддерживает переходы назад и вперёд', async () => {
+    window.history.replaceState(null, '', '/#contacts');
+    render(<App />);
+    const link = screen.getByRole('link', { name: soutTitle });
+    fireEvent.click(link);
+    expect(window.location.pathname).toBe('/sout/');
+    const dialog = screen.getByRole('dialog', { name: soutTitle });
+    expect(within(dialog).getByText('16.11.2026')).toBeTruthy();
+    expect(within(dialog).getByText('5')).toBeTruthy();
+    expect(within(dialog).getByText('2 (допустимый)')).toBeTruthy();
+    for (const { title, file } of soutDocuments) {
+      const open = within(dialog).getByRole('link', { name: `${title} (PDF, новая вкладка)` });
+      const download = within(dialog).getByRole('link', { name: `Скачать PDF. ${title}` });
+      expect(open.target).toBe('_blank');
+      expect(open.getAttribute('href')).toBe(`/sout/${encodeURIComponent(file)}`);
+      expect(download.href).toBe(open.href);
+      expect(download.download).toBe(file);
+    }
+    fireEvent(dialog, new Event('cancel', { cancelable: true }));
+    await waitFor(() => expect(window.location.hash).toBe('#contacts'));
+    expect(window.location.pathname).toBe('/');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(link);
+    window.history.forward();
+    expect(await screen.findByRole('dialog', { name: soutTitle })).toBeTruthy();
+    window.history.back();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('открывает окно по прямому адресу и закрывает его на главную в том же каталоге', async () => {
+    window.history.replaceState(null, '', '/gss/sout/');
+    render(<App />);
+    const dialog = screen.getByRole('dialog', { name: soutTitle });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Закрыть окно' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/gss/'));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+});
 
 describe('Новости на SpaceWeb', () => {
   it('показывает встроенный снимок и заменяет его новостями из одного запроса', async () => {

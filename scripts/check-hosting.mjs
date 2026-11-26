@@ -3,6 +3,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { soutDocuments } from '../src/sout.js';
 
 const output = new URL('../_hosting/', import.meta.url);
 const publicRoot = fileURLToPath(new URL('public/', output));
@@ -18,6 +19,13 @@ for (const entry of manifest.publicFiles) {
 }
 const html = await readFile(new URL('public/index.html', output), 'utf8');
 assert.ok(!html.includes('/src/main.jsx'), 'Unbuilt application entry');
+const sout = await readFile(new URL('public/sout/index.html', output), 'utf8');
+assert.ok(sout.includes('<base href="../" />') && manifest.publicFiles.some(entry => entry.path === 'sout/index.html'));
+for (const { file } of soutDocuments) {
+  assert.ok(sout.includes(`./sout/${encodeURIComponent(file)}`));
+  assert.ok(manifest.publicFiles.some(entry => entry.path === `sout/${file}`));
+  assert.deepEqual(await readFile(new URL(`public/sout/${file}`, output)), await readFile(new URL(`../public/sout/${file}`, output)));
+}
 const localReferences = [...html.matchAll(/(?:src|href)="([^"#]+)"/g)].map(m => m[1]).filter(value => !/^[a-z]+:/i.test(value));
 for (const reference of localReferences) {
   const file = resolve(publicRoot, reference);

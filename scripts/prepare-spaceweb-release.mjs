@@ -4,13 +4,15 @@ import { createHash } from 'node:crypto';
 import { lstat, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { soutDocuments } from '../src/sout.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const hosting = resolve(root, '_hosting');
 const publicRoot = resolve(hosting, 'public');
 const assetPath = /^assets\/[A-Za-z0-9][A-Za-z0-9_-]*\.(?:css|js|png|webp|woff2)$/;
 const commitHash = /^[0-9a-f]{40}$/;
-const allowed = path => typeof path === 'string' && (path === 'index.html' || path.match(assetPath)?.[0] === path);
+const soutFiles = ['sout/index.html', ...soutDocuments.map(({ file }) => `sout/${file}`)];
+const allowed = path => typeof path === 'string' && (path === 'index.html' || soutFiles.includes(path) || path.match(assetPath)?.[0] === path);
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
 
@@ -75,9 +77,10 @@ const packageManifest = JSON.parse(await readFile(resolve(hosting, 'manifest.jso
 assert.equal(packageManifest.version, 1);
 assert.ok(Array.isArray(packageManifest.publicFiles));
 const entries = packageManifest.publicFiles.filter(entry =>
-  entry.path === 'index.html' || (typeof entry.path === 'string' && entry.path.startsWith('assets/')));
+  entry.path === 'index.html' || soutFiles.includes(entry.path) || (typeof entry.path === 'string' && entry.path.startsWith('assets/')));
 const current = inventory(entries);
-for (const directory of [hosting, publicRoot, resolve(publicRoot, 'assets')]) {
+assert.ok(soutFiles.every(path => current.has(path)), 'Missing СОУТ entry or PDF.');
+for (const directory of [hosting, publicRoot, resolve(publicRoot, 'assets'), resolve(publicRoot, 'sout')]) {
   assert.ok((await lstat(directory)).isDirectory(), 'Expected a regular hosting directory.');
 }
 
@@ -95,6 +98,7 @@ await mkdir(output);
 const site = resolve(output, 'site');
 await mkdir(site);
 await mkdir(resolve(site, 'assets'));
+await mkdir(resolve(site, 'sout'));
 for (const { entry, data } of payload) {
   await writeFile(resolve(site, entry.path), data, { flag: 'wx' });
 }

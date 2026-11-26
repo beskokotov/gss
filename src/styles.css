@@ -275,6 +275,40 @@ main{
   to{opacity:1}
 }
 
+.sout-dialog{width:min(680px,calc(100% - 32px));background:#fff}
+.sout-content{display:grid;gap:16px}
+.sout-content p{font-size:14px;line-height:1.6}
+.sout-content .sout-company{color:var(--ink);font-size:16px;font-weight:700}
+.sout-facts{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:8px;margin:0}
+.sout-facts>div{padding:12px;background:#f5f7fb;border-radius:12px}
+.sout-facts dt{font-size:12px;color:var(--muted);margin-bottom:6px}
+.sout-facts dd{margin:0;color:var(--ink);font-size:14px;font-weight:700}
+.sout-content .sout-result{display:flex;align-items:flex-start;gap:8px;color:#1942b6}
+.sout-result svg{margin-top:2px}
+.sout-documents{display:grid;gap:8px;padding:0;margin:0;list-style:none}
+.sout-document{display:grid;grid-template-columns:1fr auto;align-items:center;gap:16px;padding:8px 12px;border:1px solid var(--line);border-radius:14px}
+.sout-document-open{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;min-height:44px;color:var(--ink);font-size:14px;font-weight:700}
+.sout-document-open:hover{color:var(--blue)}
+.sout-document-icon{display:grid;place-items:center;width:38px;height:38px;color:var(--blue);background:#eef3ff;border-radius:9px}
+.sout-download{min-height:44px;white-space:nowrap}
+@media(max-width:540px){
+  .sout-dialog{max-height:calc(100dvh - 24px)}
+  .sout-dialog .dialog-body{padding:26px 20px}
+  .sout-content{gap:12px}
+  .sout-facts{grid-template-columns:1fr 1fr}
+  .sout-facts>div:first-child{grid-column:1/-1}
+  .sout-document{grid-template-columns:1fr;gap:0}
+  .sout-download{justify-self:start;margin-inline-start:48px}
+}
+@media(prefers-reduced-motion:no-preference){
+  .sout-dialog[open]{transform-origin:50% 35%;animation:material-dialog-open .6s cubic-bezier(.22,1,.36,1) both}
+  .sout-dialog[open]::backdrop{animation:material-backdrop-open .45s ease-out both}
+  .sout-dialog[open].is-closing{animation:sout-dialog-close .22s ease-in both}
+  .sout-dialog[open].is-closing::backdrop{animation:sout-backdrop-close .22s ease-in both}
+}
+@keyframes sout-dialog-close{to{opacity:0;transform:translateY(12px) scale(.97,.95)}}
+@keyframes sout-backdrop-close{to{opacity:0}}
+
 /* Frame the horizontal logo without its transparent top and bottom margins. */
 .brand.brand-modern{
   display:block;

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import Icon from './Icon.jsx';
 import HeroSlideshow from './HeroSlideshow.jsx';
 import NewsSlider from './NewsSlider.jsx';
@@ -7,31 +7,50 @@ import ProductHoverSlider from './ProductHoverSlider.jsx';
 import JourneySteps from './JourneySteps.jsx';
 import RequestForm from './RequestForm.jsx';
 import ProductDescription from './ProductDescription.jsx';
+import SoutDetails from './SoutDetails.jsx';
 import SystemOverview, { SystemProfile } from './SystemOverview.jsx';
 import { productDescriptions } from './product-descriptions.js';
 import { contacts, navigation, products, services, materials, latestNews, questions } from './content.js';
+import { soutRoute, soutTitle } from './sout.js';
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/${name}`;
 const heroSlides = ['hero-slide-1.webp', 'hero-slide-2.webp', 'hero-slide-3.webp', 'hero-slide-4.webp', 'hero-slide-5.webp'].map(asset);
 const heroSlidesMobile = ['hero-slide-1-mobile.webp', 'hero-slide-2-mobile.webp', 'hero-slide-3-mobile.webp', 'hero-slide-4-mobile.webp', 'hero-slide-5-mobile.webp'].map(asset);
 const productIcons = Array.from({ length: 17 }, (_, index) => asset(`product-icon-${String(index + 1).padStart(2, '0')}.webp`));
 
-function Dialog({ title, onClose, children, className = '' }) {
+const soutModal = { type: 'sout', title: soutTitle };
+
+function Dialog({ title, onClose, children, className = '', returnFocus }) {
   const ref = useRef(null);
   const previous = useRef(document.activeElement);
+  const [closing, setClosing] = useState(false);
   useEffect(() => {
     ref.current.showModal();
     return () => {
-      previous.current?.focus();
+      if (returnFocus) returnFocus.current?.focus({ preventScroll: true });
+      else previous.current?.focus();
     };
-  }, []);
-  return <dialog ref={ref} className={`dialog ${className}`} aria-labelledby="dialog-title"
-    onCancel={onClose} onClick={(event) => {
-      if (event.target === event.currentTarget) onClose();
+  }, [returnFocus]);
+  useEffect(() => {
+    if (!closing) return;
+    const timer = setTimeout(onClose, 220);
+    return () => clearTimeout(timer);
+  }, [closing, onClose]);
+
+  function dismiss(event) {
+    if (!returnFocus) return onClose();
+    event.preventDefault();
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) onClose();
+    else setClosing(true);
+  }
+
+  return <dialog ref={ref} className={`dialog ${className}${closing ? ' is-closing' : ''}`} aria-labelledby="dialog-title"
+    onCancel={dismiss} onClick={(event) => {
+      if (event.target === event.currentTarget) dismiss(event);
     }}>
     <div className="dialog-body">
       <div className="dialog-header">
-        <button className="icon-button dialog-close" aria-label="Закрыть окно" onClick={onClose} autoFocus><Icon name="close" /></button>
+        <button className="icon-button dialog-close" aria-label="Закрыть окно" onClick={dismiss} autoFocus><Icon name="close" /></button>
         <h2 id="dialog-title">{title}</h2>
       </div>
       {children}
@@ -42,13 +61,43 @@ function Dialog({ title, onClose, children, className = '' }) {
 export default function App() {
   const [menu, setMenu] = useState(false);
   const [product, setProduct] = useState(0);
-  const [modal, setModal] = useState(null);
+  const [modal, setModal] = useState(() => soutRoute.test(window.location.pathname) ? soutModal : null);
+  const [homePath] = useState(() => soutRoute.test(window.location.pathname)
+    ? window.location.pathname.replace(soutRoute, '/')
+    : new URL('.', window.location.href).pathname);
   const [motion, setMotion] = useState(true);
   const [copyStatus, setCopyStatus] = useState('');
   const [news, setNews] = useState(latestNews);
   const menuButton = useRef(null);
+  const soutLink = useRef(null);
+  const isSout = modal?.type === 'sout';
   const current = products[product];
   const request = (topic = 'Демонстрация системы ГАРАНТ') => setModal({ type: 'request', title: topic });
+
+  function openSout(event) {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (window.location.protocol !== 'file:') {
+      window.history.pushState({ gssSout: true }, '', event.currentTarget.href);
+    }
+    setModal(soutModal);
+  }
+
+  const closeSout = useCallback(() => {
+    if (window.history.state?.gssSout) window.history.back();
+    else if (soutRoute.test(window.location.pathname)) window.history.replaceState(null, '', homePath);
+    setModal(null);
+  }, [homePath]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      setModal(previous => soutRoute.test(window.location.pathname)
+        ? soutModal
+        : previous?.type === 'sout' ? null : previous);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   function navigateToSection(event, id) {
     setMenu(false);
@@ -241,9 +290,11 @@ export default function App() {
       <section className="container section" id="contacts" aria-labelledby="contacts-title"><div className="contact-panel"><div className="contact-intro"><span className="eyebrow">Гарант-Сервис Самара</span><h2 id="contacts-title">Давайте найдем<br />ваше решение</h2><p>Расскажите о своей задаче — обсудим возможности системы и следующий шаг.</p><button className="button button-white" onClick={() => request()}>Заказать демонстрацию <Icon name="arrow" size={20} /></button></div><div className="contact-data"><div className="contact-phones">{contacts.phones.map((phone) => <a key={phone.href} href={phone.href}>{phone.label}</a>)}</div><a className="contact-email" href={`mailto:${contacts.email}`}>{contacts.email}<Icon name="external" size={22} /></a><address>{contacts.address}<br />{contacts.office}</address><div className="contact-links"><a href={contacts.mapUrl} target="_blank" rel="noreferrer">Открыть карту <Icon name="external" size={16} /><span className="sr-only"> (новая вкладка)</span></a><button onClick={copyAddress}><Icon name="copy" size={16} /> Скопировать адрес</button></div><p className="copy-status" aria-live="polite">{copyStatus}</p></div></div></section>
     </main>
 
-    <footer className="footer"><div className="container"><div className="footer-top"><a className="brand brand-modern" href="#home"><img src={asset('gss-logo-modern-v1.webp')} width="900" height="300" alt="ГАРАНТ-СЕРВИС САМАРА" /></a><div className="footer-contact-actions"><a className="footer-garant-brand" href="https://www.garant.ru/" aria-label="ГАРАНТ — 35 лет рядом с вами"><img src={asset('garant-logo-35-years.webp')} alt="ГАРАНТ — 35 лет рядом с вами" width="640" height="256" /></a><a href="#home" className="text-button">Наверх ↑</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} ООО «Гарант-Сервис Самара»</span><button className="text-button" onClick={() => setModal({ type: 'privacy', title: 'Как работает обратная связь' })}>Обработка данных</button><span>Состав и условия услуг уточняйте у специалистов.</span></div></div></footer>
+    <footer className="footer"><div className="container"><div className="footer-top"><a className="brand brand-modern" href="#home"><img src={asset('gss-logo-modern-v1.webp')} width="900" height="300" alt="ГАРАНТ-СЕРВИС САМАРА" /></a><div className="footer-contact-actions"><a className="footer-garant-brand" href="https://www.garant.ru/" aria-label="ГАРАНТ — 35 лет рядом с вами"><img src={asset('garant-logo-35-years.webp')} alt="ГАРАНТ — 35 лет рядом с вами" width="640" height="256" /></a><a href="#home" className="text-button">Наверх ↑</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} ООО «Гарант-Сервис Самара»</span><button className="text-button" onClick={() => setModal({ type: 'privacy', title: 'Как работает обратная связь' })}>Обработка данных</button><a ref={soutLink} className="text-button" href={`${homePath}sout/`} aria-haspopup="dialog" onClick={openSout}>{soutTitle}</a><span>Состав и условия услуг уточняйте у специалистов.</span></div></div></footer>
 
-    {modal && <Dialog title={modal.title} onClose={() => setModal(null)} className={['company', 'system'].includes(modal.type) ? 'company-dialog' : ''}>
+    {modal && <Dialog title={modal.title} onClose={isSout ? closeSout : () => setModal(null)} returnFocus={isSout ? soutLink : undefined}
+      className={isSout ? 'sout-dialog' : ['company', 'system'].includes(modal.type) ? 'company-dialog' : ''}>
+      {isSout && <SoutDetails homePath={homePath} />}
       {modal.type === 'company' && <CompanyProfile />}
       {modal.type === 'system' && <SystemProfile />}
       {modal.type === 'request' && <RequestForm topic={modal.title} />}
