@@ -2,12 +2,96 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App.jsx';
-import { products } from './content.js';
+import { latestNews, products } from './content.js';
 
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
 });
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+
+describe('Новости на SpaceWeb', () => {
+  it('показывает встроенный снимок и заменяет его новостями из одного запроса', async () => {
+    vi.stubEnv('VITE_NEWS_ENDPOINT', '/api/news');
+    const news = [{ ...latestNews[0], title: 'Свежая новость из API' }];
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true, json: async () => ({ updatedAt: news[0].date, news })
+    });
+    render(<App />);
+    expect(screen.getByRole('heading', { name: new RegExp(latestNews[0].title.slice(0, 25)) })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: /Свежая новость из API/ })).toBeTruthy();
+    expect(fetchSpy).toHaveBeenCalledExactlyOnceWith('/api/news', { signal: expect.any(AbortSignal) });
+  });
+
+  it.each([['компьютере', 3], ['телефоне', 1]])(
+    'возвращается к первой карточке после обновления списка той же длины на %s',
+    async (_device, visibleCards) => {
+      vi.stubEnv('VITE_NEWS_ENDPOINT', '/api/news');
+      vi.stubGlobal('matchMedia', query => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        addEventListener() {},
+        removeEventListener() {}
+      }));
+      const fresh = [1, 2, 3, 4].map(number => ({
+        ...latestNews[0],
+        title: `Свежая публикация ${number}`,
+        date: `2026-11-26T0${9 - number}:00:00+00:00`,
+        href: `https://www.garant.ru/news/test-${number}/`
+      }));
+      const news = [...fresh, ...latestNews].slice(0, latestNews.length);
+      let resolveResponse;
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockReturnValue(new Promise(resolve => { resolveResponse = resolve; }));
+      const { rerender } = render(<App />);
+      const slider = screen.getByRole('region', { name: 'Последние правовые новости' });
+      const track = slider.querySelector('.rss-grid');
+      const previous = within(slider).getByRole('button', { name: 'Предыдущая новость' });
+      const next = within(slider).getByRole('button', { name: 'Следующая новость' });
+      const cardWidth = 300;
+      track.scrollTo = ({ left }) => {
+        track.scrollLeft = left;
+        fireEvent.scroll(track);
+      };
+      Object.defineProperties(track, {
+        clientWidth: { value: visibleCards * cardWidth },
+        scrollWidth: { value: news.length * cardWidth }
+      });
+      expect(track.scrollLeft).toBe(0);
+      track.scrollTo({ left: cardWidth });
+      expect(previous.disabled).toBe(false);
+
+      await act(async () => {
+        resolveResponse({ ok: true, json: async () => ({ updatedAt: fresh[0].date, news }) });
+      });
+      expect(track.scrollLeft).toBe(0);
+      expect(previous.disabled).toBe(true);
+      expect(next.disabled).toBe(false);
+      const cards = within(track).getAllByRole('article');
+      expect(cards.slice(0, visibleCards).map(card => within(card).getByRole('heading').textContent))
+        .toEqual(fresh.slice(0, visibleCards).map(item => `${item.title} (на garant.ru, новая вкладка)`));
+
+      vi.spyOn(cards[0], 'getBoundingClientRect').mockReturnValue({ width: cardWidth });
+      fireEvent.click(next);
+      expect(track.scrollLeft).toBe(cardWidth);
+      rerender(<App />);
+      expect(track.scrollLeft).toBe(cardWidth);
+      fireEvent.click(previous);
+      expect(track.scrollLeft).toBe(0);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it.each([
+    ['HTTP 503', () => Promise.resolve({ ok: false })],
+    ['повреждённый JSON', () => Promise.resolve({ ok: true, json: () => Promise.reject(new SyntaxError()) })],
+    ['пустой список', () => Promise.resolve({ ok: true, json: () => Promise.resolve({ news: [] }) })],
+    ['ошибка сети', () => Promise.reject(new TypeError())],
+  ])('сохраняет снимок без повтора запроса при ошибке «%s»', async (_reason, fetchResponse) => {
+    vi.stubEnv('VITE_NEWS_ENDPOINT', '/api/news');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(fetchResponse);
+    await act(async () => render(<App />));
+    expect(screen.getByRole('heading', { name: new RegExp(latestNews[0].title.slice(0, 25)) })).toBeTruthy();
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('Ключевые сценарии сайта', () => {
   it('открывает описание системы в окне и возвращает фокус к кнопке после закрытия', async () => {

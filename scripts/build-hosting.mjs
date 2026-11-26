@@ -21,6 +21,11 @@ await buildSite('_hosting/public');
 await mkdir(new URL('public/api/', output), { recursive: true });
 await mkdir(new URL('gss-private/', output), { recursive: true });
 await copyFile(new URL('server/public/request.php', root), new URL('public/api/request.php', output));
+await copyFile(new URL('server/public/news.php', root), new URL('public/api/news.php', output));
+await mkdir(new URL('gss-private/news/', output), { recursive: true });
+for (const name of ['cache.php', 'update.php']) {
+  await copyFile(new URL(`server/news/${name}`, root), new URL(`gss-private/news/${name}`, output));
+}
 for (const name of ['config.example.php', 'composer.json', 'composer.lock', 'README.md']) {
   await copyFile(new URL(`server/${name}`, root), new URL(`gss-private/${name}`, output));
 }

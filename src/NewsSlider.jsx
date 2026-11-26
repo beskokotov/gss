@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import Icon from './Icon.jsx';
 
 const dateFormatter = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' });
@@ -14,7 +14,7 @@ export default function NewsSlider({ news }) {
     track.current?.classList.remove('is-animating');
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = track.current;
     function update() {
       const next = {
@@ -24,6 +24,8 @@ export default function NewsSlider({ news }) {
       setPosition(previous => previous.atStart === next.atStart && previous.atEnd === next.atEnd ? previous : next);
     }
     const onResize = () => { stopAnimation(); update(); };
+    // A card from the snapshot can remain the browser's snap target after moving deeper into the feed.
+    element.scrollLeft = 0;
     update();
     element.addEventListener('scroll', update, { passive: true });
     element.addEventListener('pointerdown', stopAnimation, { passive: true });
@@ -39,7 +41,7 @@ export default function NewsSlider({ news }) {
       observer?.disconnect();
       stopAnimation();
     };
-  }, [news.length]);
+  }, [news]);
 
   function move(direction) {
     const element = track.current;

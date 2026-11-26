@@ -45,6 +45,7 @@ export default function App() {
   const [modal, setModal] = useState(null);
   const [motion, setMotion] = useState(true);
   const [copyStatus, setCopyStatus] = useState('');
+  const [news, setNews] = useState(latestNews);
   const menuButton = useRef(null);
   const current = products[product];
   const request = (topic = 'Демонстрация системы ГАРАНТ') => setModal({ type: 'request', title: topic });
@@ -68,6 +69,36 @@ export default function App() {
       window.scrollTo({ top: Math.max(0, blockTop - headerHeight - gap), behavior: reducedMotion ? 'instant' : 'smooth' });
     }));
   }
+
+  useEffect(() => {
+    const endpoint = import.meta.env.VITE_NEWS_ENDPOINT;
+    if (!endpoint) return;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    async function loadNews() {
+      try {
+        const response = await fetch(endpoint, { signal: controller.signal });
+        if (!response.ok) return;
+        const { news: items } = await response.json();
+        if (controller.signal.aborted || !Array.isArray(items) || !items.length || items.length > 10) return;
+        if (items.every(item => item &&
+          ['title', 'description', 'date', 'category', 'image', 'href'].every(key => typeof item[key] === 'string') &&
+          Number.isFinite(Date.parse(item.date)))) {
+          setNews(items);
+        }
+      } catch {
+        // The embedded snapshot is already visible.
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+    loadNews();
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, []);
 
   useEffect(() => {
     const onKey = (event) => { if (event.key === 'Escape' && menu) { setMenu(false); menuButton.current?.focus(); } };
@@ -180,9 +211,9 @@ export default function App() {
 
       <section className="container section" id="materials" aria-labelledby="materials-title"><div className="section-heading"><div><span className="eyebrow">Полезно знать</span><h2 id="materials-title">Начните с главного</h2></div><a className="text-button" href="https://www.garant.ru/news/" target="_blank" rel="noreferrer">Правовые новости на ГАРАНТ.РУ <Icon name="external" size={18} /><span className="sr-only"> (новая вкладка)</span></a></div>
         <div className="materials-grid">{materials.map((material, index) => <article className="material-card" key={material.id}><div className={`material-cover cover-${index}`} aria-hidden="true"><span className="cover-line" /><Icon name={material.icon} size={70} /><span className="cover-orbit" /></div><div className="material-body"><span className="eyebrow">{material.category}</span><h3><button onClick={() => setModal({ type: 'article', title: material.title, article: material })}>{material.title}</button></h3><p>{material.intro}</p></div></article>)}</div>
-        {latestNews.length > 0 && <div className="rss-preview" id="news" aria-labelledby="rss-title">
+        {news.length > 0 && <div className="rss-preview" id="news" aria-labelledby="rss-title">
           <div className="rss-heading"><div><h2 id="rss-title">Последние правовые новости</h2><p className="eyebrow">Коротко о важных изменениях. Полные материалы — на сайте ГАРАНТ.РУ.</p></div><a className="text-button" href="https://www.garant.ru/news/" target="_blank" rel="noreferrer">Все новости <Icon name="external" size={18} /><span className="sr-only"> (новая вкладка)</span></a></div>
-          <NewsSlider news={latestNews} />
+          <NewsSlider news={news} />
           <p className="rss-source-note">Источник: <a href="https://rss.garant.ru/news/" target="_blank" rel="noreferrer">официальная RSS-лента ГАРАНТ.РУ</a>. Обновление выполняется автоматически.</p>
         </div>}
       </section>

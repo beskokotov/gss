@@ -11,7 +11,10 @@ export async function buildSite(target) {
   const destination = resolve(root, target);
   if (!destination.startsWith(resolve(root) + sep)) throw new Error('Build destination outside project.');
 
-  await build({ root });
+  const define = target === '_hosting/public'
+    ? { 'import.meta.env.VITE_NEWS_ENDPOINT': JSON.stringify('/api/news') }
+    : {};
+  await build({ root, define });
   execFileSync(process.execPath, [resolve(root, 'scripts/build-preview.mjs')], { cwd: root, stdio: 'inherit' });
   // Remove only the verified generated public directory after both builds succeed.
   await rm(destination, { recursive: true, force: true });

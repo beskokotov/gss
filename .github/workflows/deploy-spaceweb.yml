@@ -1,0 +1,91 @@
+name: Deploy gss.ru
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseline_manifest:
+        description: 'Optional compact JSON from a previous release-manifest.json'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  prepare:
+    name: Prepare static SpaceWeb release
+    if: github.repository == 'beskokotov/gss' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the selected main commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install dependencies for build and tests
+        run: |
+          npm ci
+          composer --working-dir=server install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts --no-plugins
+
+      - name: Check source and run tests
+        run: |
+          git diff --check
+          npm test
+          php -l server/public/news.php
+          php -l server/news/cache.php
+          php -l server/news/update.php
+          php scripts/check-news.php
+          npm run test:server
+
+      - name: Build and check the hosting package
+        run: |
+          npm run build:hosting
+          npm run check:hosting
+          npm run check:preview
+
+      - name: Verify optional SpaceWeb host key offline
+        if: vars.SPACEWEB_SSH_HOST_KEY != ''
+        env:
+          SPACEWEB_HOST_KEY: ${{ vars.SPACEWEB_SSH_HOST_KEY }}
+        run: |
+          if [[ ! "$SPACEWEB_HOST_KEY" =~ ^ssh-ed25519\ [A-Za-z0-9+/]+={0,2}$ ]]; then
+            echo 'Expected an ssh-ed25519 public key and its base64 value.'
+            exit 1
+          fi
+          umask 077
+          public_key="$RUNNER_TEMP/spaceweb-host.pub"
+          printf '%s\n' "$SPACEWEB_HOST_KEY" > "$public_key"
+          fingerprint=$(ssh-keygen -E sha256 -lf "$public_key" | awk '{print $2}')
+          if [[ "$fingerprint" != 'SHA256:fDATcu43/zhAoS18DoD79nQjgUy1/Qmfq07t5VrDAew' ]]; then
+            echo 'SpaceWeb host key fingerprint mismatch.'
+            exit 1
+          fi
+          printf '%s %s\n' '77.222.40.35' "$SPACEWEB_HOST_KEY" > "$RUNNER_TEMP/spaceweb-known-hosts"
+
+      - name: Stage static files and compare release manifests
+        env:
+          BASELINE_MANIFEST: ${{ inputs.baseline_manifest }}
+        run: |
+          baseline=()
+          if [[ -n "$BASELINE_MANIFEST" ]]; then
+            baseline=("$RUNNER_TEMP/spaceweb-baseline.json")
+            printf '%s\n' "$BASELINE_MANIFEST" > "${baseline[0]}"
+          fi
+          node scripts/prepare-spaceweb-release.mjs "$RUNNER_TEMP/gss-spaceweb-release" "${baseline[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the static release for review
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: gss-spaceweb-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/gss-spaceweb-release/
+          if-no-files-found: error
